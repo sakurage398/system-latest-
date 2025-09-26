@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Checker | LAMS</title>
+    <link rel="stylesheet" href="CSS/check-attendance.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <h1 class="title">Automated Library Attendance Monitoring System</h1>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="search-container">
+            <div class="search-box">
+                <h2 class="search-label">Search Student no./Faculty no./Staff no.</h2>
+                <div class="search-input">
+                    <input type="text" id="searchId" placeholder="Enter ID number">
+                    <button id="searchBtn">Search</button>
+                </div>
+                <div class="error-message" id="errorMessage">
+                    No record found for the entered ID number.
+                </div>
+            </div>
+        </div>
+
+        <div class="info-container" id="infoContainer">
+            <i class="fas fa-user-circle info-icon"></i>
+            <p class="info-text">Search your ID number to view your attendance history</p>
+        </div>
+
+        <div class="attendance-history" id="attendanceHistory">
+            <h2 class="attendance-title">Attendance History</h2>
+            
+            <div class="user-info">
+                <img src="" alt="User Picture" class="user-picture" id="userPicture">
+                <div class="user-details">
+                    <h3 id="userName"></h3>
+                    <p id="userNumber"></p>
+                    <p id="userDepartment"></p>
+                    <p id="userProgram"></p>
+                    <p id="userYearBlock" style="display: none;"></p>
+                    <p id="userRole" style="display: none;"></p>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Log Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <!-- Attendance data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pin Code Modal -->
+    <div class="modal" id="pinModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Enter your Pin Code</h2>
+            <input type="password" class="pin-input" id="pinInput" placeholder="Enter 6-digit PIN" maxlength="6">
+            <div class="modal-buttons">
+                <button class="modal-btn submit-btn" id="submitPin">Submit</button>
+                <button class="modal-btn cancel-btn" id="cancelPin">Cancel</button>
+            </div>
+            <div class="error-message" id="pinErrorMessage" style="margin-top: 10px;">
+                Incorrect PIN. Please try again.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const searchBtn = document.getElementById("searchBtn");
+            const searchId = document.getElementById("searchId");
+            const pinModal = document.getElementById("pinModal");
+            const pinInput = document.getElementById("pinInput");
+            const submitPin = document.getElementById("submitPin");
+            const cancelPin = document.getElementById("cancelPin");
+            const errorMessage = document.getElementById("errorMessage");
+            const pinErrorMessage = document.getElementById("pinErrorMessage");
+            const attendanceHistory = document.getElementById("attendanceHistory");
+            const infoContainer = document.getElementById("infoContainer");
+            
+            let currentUser = null;
+            let userType = null;
+
+            // Search button click handler
+            searchBtn.addEventListener("click", function() {
+                const idNumber = searchId.value.trim();
+                
+                if (!idNumber) {
+                    showError("Please enter an ID number");
+                    return;
+                }
+                
+                hideError();
+                checkIdExists(idNumber);
+            });
+            
+            // Submit PIN handler
+            submitPin.addEventListener("click", function() {
+                const enteredPin = pinInput.value.trim();
+                
+                if (!enteredPin || enteredPin.length !== 6) {
+                    pinErrorMessage.textContent = "Please enter a valid 6-digit PIN";
+                    pinErrorMessage.style.display = "block";
+                    return;
+                }
+                
+                verifyPin(enteredPin);
+            });
+            
+            // Cancel PIN handler
+            cancelPin.addEventListener("click", function() {
+                pinModal.style.display = "none";
+                pinInput.value = "";
+                pinErrorMessage.style.display = "none";
+            });
+            
+            function checkIdExists(idNumber) {
+                fetch(`PHP/attendance_checker.php?action=check_id&id_number=${encodeURIComponent(idNumber)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            currentUser = data.user;
+                            userType = data.user.type;
+                            pinModal.style.display = "flex";
+                            pinInput.value = "";
+                            pinErrorMessage.style.display = "none";
+                        } else {
+                            showError(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError("An error occurred while searching");
+                    });
+            }
+            
+            function verifyPin(enteredPin) {
+                fetch(`PHP/attendance_checker.php?action=verify_pin&id_number=${encodeURIComponent(currentUser.student_number || currentUser.faculty_number || currentUser.staff_number)}&pin=${encodeURIComponent(enteredPin)}&user_type=${encodeURIComponent(userType)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            pinModal.style.display = "none";
+                            pinInput.value = "";
+                            pinErrorMessage.style.display = "none";
+                            infoContainer.style.display = "none"; // Hide the info container
+                            displayUserInfo();
+                            fetchAttendanceHistory();
+                        } else {
+                            pinErrorMessage.textContent = data.message;
+                            pinErrorMessage.style.display = "block";
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        pinErrorMessage.textContent = "An error occurred while verifying PIN";
+                        pinErrorMessage.style.display = "block";
+                    });
+            }
+            
+            function displayUserInfo() {
+                // Set user picture
+                const pictureSrc = currentUser.picture || 
+                                  (userType === 'student' ? 'img/student.jpg' : 
+                                   userType === 'faculty' ? 'img/faculty.jpg' : 'img/staff.jpg');
+                document.getElementById("userPicture").src = pictureSrc;
+                
+                // Set user name and ID
+                document.getElementById("userName").textContent = currentUser.name;
+                const idNumber = currentUser.student_number || currentUser.faculty_number || currentUser.staff_number;
+                document.getElementById("userNumber").textContent = `ID: ${idNumber}`;
+                
+                // Set other info based on user type
+                if (userType === "student") {
+                    document.getElementById("userDepartment").textContent = `Department: ${currentUser.department}`;
+                    document.getElementById("userProgram").textContent = `Program: ${currentUser.program}`;
+                    document.getElementById("userYearBlock").textContent = `Year/Block: ${currentUser.year_level}/${currentUser.block}`;
+                    document.getElementById("userYearBlock").style.display = "block";
+                    document.getElementById("userRole").style.display = "none";
+                } else if (userType === "faculty") {
+                    document.getElementById("userDepartment").textContent = `Department: ${currentUser.department}`;
+                    document.getElementById("userProgram").textContent = `Program: ${currentUser.program}`;
+                    document.getElementById("userYearBlock").style.display = "none";
+                    document.getElementById("userRole").style.display = "none";
+                } else if (userType === "staff") {
+                    document.getElementById("userDepartment").textContent = `Department: ${currentUser.department}`;
+                    document.getElementById("userProgram").textContent = `Role: ${currentUser.role}`;
+                    document.getElementById("userYearBlock").style.display = "none";
+                    document.getElementById("userRole").style.display = "none";
+                }
+                
+                // Show attendance history section
+                attendanceHistory.style.display = "block";
+            }
+            
+            function fetchAttendanceHistory() {
+                const idNumber = currentUser.student_number || currentUser.faculty_number || currentUser.staff_number;
+                
+                fetch(`PHP/attendance_checker.php?action=get_attendance&id_number=${encodeURIComponent(idNumber)}&user_type=${encodeURIComponent(userType)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            populateAttendanceTable(data.attendance);
+                        } else {
+                            console.error('Error:', data.message);
+                            populateAttendanceTable([]);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        populateAttendanceTable([]);
+                    });
+            }
+            
+            function populateAttendanceTable(attendance) {
+                const tableBody = document.getElementById("attendanceTableBody");
+                tableBody.innerHTML = "";
+                
+                if (attendance.length === 0) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 3;
+                    cell.textContent = "No attendance records found";
+                    cell.style.textAlign = "center";
+                    row.appendChild(cell);
+                    tableBody.appendChild(row);
+                    return;
+                }
+                
+                attendance.forEach(record => {
+                    const row = document.createElement("tr");
+                    
+                    const timeInCell = document.createElement("td");
+                    timeInCell.textContent = record.time_in;
+                    row.appendChild(timeInCell);
+                    
+                    const timeOutCell = document.createElement("td");
+                    timeOutCell.textContent = record.time_out;
+                    row.appendChild(timeOutCell);
+                    
+                    const dateCell = document.createElement("td");
+                    dateCell.textContent = record.log_date;
+                    row.appendChild(dateCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = "block";
+                attendanceHistory.style.display = "none";
+                infoContainer.style.display = "flex"; 
+            }
+            
+            function hideError() {
+                errorMessage.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>

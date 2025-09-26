@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="CSS/login.css">
+    <title>Library Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Bar with Combined Logo and Title Image -->
+        <div class="top-bar">
+        <div class="top-bar-content">
+            <img src="img/logo.png" alt="Library Logo" class="header-logo">
+            <img src="img/title.png" alt="Library Title" class="header-title">
+        </div>
+
+         <nav class="header-nav">
+                <a href="admin-about.html" class="nav-link">About</a>
+                <a href="login.html" class="nav-link">Login</a>
+        </nav>
+    </div>
+
+    <!-- Centered Login Container -->
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-header">
+                <h2>LOGIN</h2>
+                <p>Enter your credentials to access the system</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter username" required>
+                    <span id="username-error" class="error">Please enter a valid username.</span>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter password" required>
+                    <span id="password-error" class="error">Password must have at least 8 characters.</span>
+                </div>
+                <button type="submit" class="login-btn">Log in</button>
+            </form>
+            <p id="login-message" style="color: #e74c3c; display: none; margin-top: 15px;"></p>
+        </div>
+    </div>
+
+    <!-- Pincode Modal -->
+    <div class="pincode-modal" id="pincodeModal">
+        <div class="pincode-container">
+            <h2 class="pincode-title">Enter Your Pincode</h2>
+            <input type="password" id="pincode" class="pincode-input" placeholder="Enter 6-digit pincode" maxlength="6" inputmode="numeric" pattern="\d{6}">
+            <p id="pincode-error" class="pincode-error">Incorrect pincode. Please try again.</p>
+            <button id="verifyPincode" class="pincode-btn">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            // Reset error messages
+            document.getElementById("username-error").style.display = "none";
+            document.getElementById("password-error").style.display = "none";
+            document.getElementById("login-message").style.display = "none";
+            
+            // Validate inputs
+            let username = document.getElementById("username").value.trim();
+            let password = document.getElementById("password").value;
+            let isValid = true;
+            
+            if (username === "") {
+                document.getElementById("username-error").style.display = "block";
+                isValid = false;
+            }
+            
+            if (password.length < 8) {
+                document.getElementById("password-error").style.display = "block";
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Show loading state
+            const loginBtn = document.querySelector(".login-btn");
+            const originalBtnText = loginBtn.textContent;
+            loginBtn.textContent = "Logging in...";
+            loginBtn.disabled = true;
+            
+            // Prepare form data
+            let formData = new FormData(this);
+            
+            // Send login request
+            fetch("PHP/login.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Server Response:", data);
+                let message = document.getElementById("login-message");
+                
+                if (data.status === "success") {
+                    // Redirect on successful login
+                    window.location.href = data.redirect;
+                } else if (data.status === "pincode_required") {
+                    // Show pincode modal
+                    document.getElementById("pincodeModal").style.display = "flex";
+                    document.getElementById("pincode").focus();
+                } else {
+                    // Show error message
+                    message.textContent = data.message || "Login failed. Please try again.";
+                    message.style.display = "block";
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById("login-message").textContent = "An error occurred. Please try again.";
+                document.getElementById("login-message").style.display = "block";
+            })
+            .finally(() => {
+                loginBtn.textContent = originalBtnText;
+                loginBtn.disabled = false;
+            });
+        });
+
+        // Pincode verification
+        document.getElementById("verifyPincode").addEventListener("click", function() {
+            let pincode = document.getElementById("pincode").value;
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+            let errorElement = document.getElementById("pincode-error");
+            
+            // Reset error
+            errorElement.style.display = "none";
+            
+            // Validate pincode
+            if (pincode.length !== 6 || !/^\d+$/.test(pincode)) {
+                errorElement.textContent = "Pincode must be 6 digits";
+                errorElement.style.display = "block";
+                return;
+            }
+            
+            // Show loading state
+            const verifyBtn = document.getElementById("verifyPincode");
+            const originalBtnText = verifyBtn.textContent;
+            verifyBtn.textContent = "Verifying...";
+            verifyBtn.disabled = true;
+            
+            // Prepare form data
+            let formData = new FormData();
+            formData.append("username", username);
+            formData.append("password", password);
+            formData.append("pincode", pincode);
+            
+            // Send verification request
+            fetch("PHP/login.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    window.location.href = data.redirect;
+                } else {
+                    errorElement.textContent = data.message || "Incorrect pincode. Please try again.";
+                    errorElement.style.display = "block";
+                    document.getElementById("pincode").value = "";
+                    document.getElementById("pincode").focus();
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                errorElement.textContent = "An error occurred. Please try again.";
+                errorElement.style.display = "block";
+            })
+            .finally(() => {
+                verifyBtn.textContent = originalBtnText;
+                verifyBtn.disabled = false;
+            });
+        });
+
+        // Allow pressing Enter in pincode field
+        document.getElementById("pincode").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                document.getElementById("verifyPincode").click();
+            }
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById("pincodeModal").addEventListener("click", function(e) {
+            if (e.target === this) {
+                this.style.display = "none";
+            }
+        });
+        
+        // Focus username field on page load
+        window.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("username").focus();
+        });
+    </script>
+</body>
+</html>

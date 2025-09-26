@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Qr Scanning</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="CSS/admin-scanner.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <span class="title">ALAMS</span>
+        </div>
+        
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <aside class="sidebar">
+            <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+        </aside>
+
+        <div class="modal">
+            <div class="modal-content">
+                <p>Do you want to log out?</p>
+                <div class="modal-buttons">
+                    <button class="yes-btn">Yes</button>
+                    <button class="no-btn">No</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Left side: Scanner -->
+            <div class="scanner-container">
+                <h2>Scan QR Code</h2>
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <p id="scan-result">Waiting for QR code...</p>
+                <p id="scan-details"></p>
+            </div>
+            
+            <div class="content-area">
+        <div class="user-display hidden" id="user-display">
+            <div class="profile-container">
+                <div class="profile-picture-container">
+                    <img id="profile-picture" class="profile-picture" src="" alt="Profile Picture">
+                    <div class="no-picture" id="no-picture">No Picture Available</div>
+                </div>
+                <div class="user-details">
+                    <h3 id="user-name"></h3>
+                    <p id="user-id"></p>
+                    <p id="user-department"></p>
+                    <p id="user-program"></p>
+                    <p id="user-status" class="status"></p>
+                </div>
+            </div>
+            <div class="attendance-table-container">
+                <h4>Recent Attendance (Last 5)</h4>
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-data">
+                        <!-- Attendance data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="recent-scanners">
+            <h4>Recently Scanned</h4>
+            <div class="scanned-users" id="scanned-users">
+                <!-- Scanned user avatars will appear here -->
+            </div>
+        </div>
+    </div>
+    <div class="scan-prompt" id="scan-prompt">
+        <i class="fa-solid fa-qrcode" style="font-size: 80px; color: #8869BB; margin-bottom: 20px;"></i>
+        <h3>Scan a QR code to view details</h3>
+    </div>
+</div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Admin menu dropdown
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+    
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+    
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+    
+    // Logout modal
+    const logoutBtn = document.querySelector(".logout-btn");
+    const modal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+    
+    logoutBtn.onclick = function() {
+        modal.style.display = "flex";
+    };
+    
+    yesBtn.onclick = function() {
+        window.location.href = "login.html";
+    };
+    
+    noBtn.onclick = function() {
+        modal.style.display = "none";
+    };
+
+    // QR Scanner Setup
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasContext = canvasElement.getContext('2d');
+    const scanResult = document.getElementById('scan-result');
+    const scanDetails = document.getElementById('scan-details');
+    
+    let scanning = true;
+    let scanCooldown = false;
+    let recentScans = []; // Store recent scan data
+    const MAX_RECENT_SCANS = 5; // Maximum number of recent scans to display
+
+    // Check if we need to reset scans (after 6 PM)
+    function checkResetScans() {
+        const now = new Date();
+        const resetTime = new Date();
+        resetTime.setHours(18, 0, 0, 0); // 6 PM
+        
+        // Get saved reset date from localStorage
+        const lastResetDate = localStorage.getItem('lastResetDate');
+        
+        if (!lastResetDate || (now >= resetTime && new Date(lastResetDate) < resetTime)) {
+            // It's past 6 PM and we haven't reset today, or no reset date exists
+            localStorage.removeItem('recentScans');
+            localStorage.setItem('lastResetDate', now.toISOString());
+            return [];
+        }
+        
+        // Load existing scans if any
+        const savedScans = localStorage.getItem('recentScans');
+        return savedScans ? JSON.parse(savedScans) : [];
+    }
+
+    // Initialize with saved scans or check if reset is needed
+    recentScans = checkResetScans();
+    updateRecentScansDisplay();
+
+    // Initialize camera
+    async function initializeCamera() {
+        try {
+            if (!navigator.mediaDevices) {
+                throw new Error('Media devices not supported');
+            }
+
+            const constraints = {
+                video: { 
+                    facingMode: { 
+                        ideal: 'environment' 
+                    },
+                    width: { min: 640, ideal: 1280, max: 1920 },
+                    height: { min: 480, ideal: 720, max: 1080 }
+                }
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+            if (!stream) {
+                throw new Error('No video stream obtained');
+            }
+
+            videoElement.srcObject = stream;
+            
+            videoElement.onloadedmetadata = () => {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                requestAnimationFrame(scanQRCode);
+            };
+        } catch (error) {
+            scanResult.textContent = `Camera initialization error: ${error.message}`;
+            scanResult.style.color = 'red';
+        }
+    }
+
+    // Add a scanned user to the recent scans list
+    function addToRecentScans(memberData, memberType) {
+        // Check if user already scanned within last minute
+        const now = new Date();
+        const oneMinuteAgo = new Date(now.getTime() - 60000);
+        
+        const recentScan = recentScans.find(scan => 
+            scan.id === memberData[memberType + '_number'] && 
+            new Date(scan.timestamp) > oneMinuteAgo
+        );
+        
+        if (recentScan) {
+            return false; // Already scanned recently
+        }
+        
+        // Add new scan to beginning of array
+        recentScans.unshift({
+            id: memberData[memberType + '_number'],
+            name: memberData.name,
+            picture: memberData.picture,
+            timestamp: now.toISOString(),
+            type: memberType
+        });
+        
+        // Keep only the most recent scans
+        if (recentScans.length > MAX_RECENT_SCANS + 1) {
+            recentScans = recentScans.slice(0, MAX_RECENT_SCANS + 1);
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('recentScans', JSON.stringify(recentScans));
+        updateRecentScansDisplay();
+        return true;
+    }
+
+    // Update the display of recently scanned users
+    function updateRecentScansDisplay() {
+        const container = document.getElementById('scanned-users');
+        container.innerHTML = '';
+        
+        // Show only the first 5 scans, with +N if more
+        const scansToShow = recentScans.slice(0, MAX_RECENT_SCANS);
+        const extraScans = recentScans.length - MAX_RECENT_SCANS;
+        
+        if (extraScans > 0) {
+            const moreElement = document.createElement('div');
+            moreElement.className = 'scanned-user-avatar more-count';
+            moreElement.textContent = `+${extraScans}`;
+            container.appendChild(moreElement);
+        }
+        
+        scansToShow.forEach(scan => {
+            const avatar = document.createElement('div');
+            avatar.className = 'scanned-user-avatar';
+            
+            if (scan.picture) {
+                const img = document.createElement('img');
+                img.src = scan.picture;
+                img.className = 'scanned-user-avatar';
+                img.title = scan.name;
+                avatar.replaceWith(img);
+                container.appendChild(img);
+            } else {
+                // Use initials if no picture
+                const initials = scan.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                avatar.textContent = initials.length > 2 ? initials.substring(0, 2) : initials;
+                avatar.title = scan.name;
+                container.appendChild(avatar);
+            }
+        });
+    }
+
+    function displayUserData(memberType, memberData) {
+        document.getElementById('user-display').classList.remove('hidden');
+        document.getElementById('scan-prompt').classList.add('hidden');
+
+        document.getElementById('user-name').textContent = memberData.name;
+        document.getElementById('user-id').textContent = memberData[memberType + '_number'];
+        document.getElementById('user-department').textContent = memberData.department;
+        
+        if (memberType === 'student') {
+            document.getElementById('user-program').textContent = `${memberData.program} - ${memberData.year_level} (${memberData.block})`;
+        } else if (memberType === 'faculty') {
+            document.getElementById('user-program').textContent = memberData.program;
+        } else {
+            document.getElementById('user-program').textContent = memberData.role;
+        }
+
+        const statusElement = document.getElementById('user-status');
+        statusElement.textContent = memberData.registration_status;
+        statusElement.className = 'status ' + 
+            (memberData.registration_status === 'Registered' ? 'status-registered' : 'status-unregistered');
+
+        const profilePic = document.getElementById('profile-picture');
+        const noPic = document.getElementById('no-picture');
+        
+        if (memberData.picture) {
+            profilePic.src = memberData.picture;
+            profilePic.style.display = 'block';
+            noPic.style.display = 'none';
+        } else {
+            profilePic.style.display = 'none';
+            noPic.style.display = 'block';
+        }
+
+        fetchAttendanceRecords(memberType, memberData[memberType + '_number']);
+    }
+
+    function fetchAttendanceRecords(memberType, memberNumber) {
+        $.ajax({
+            url: 'PHP/fetch_attendance.php',
+            type: 'POST',
+            data: {
+                idNumber: memberNumber,
+                userType: memberType
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    const tbody = document.getElementById('attendance-data');
+                    tbody.innerHTML = '';
+
+                    data.attendance.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.time_in || '-'}</td>
+                            <td>${record.time_out || '-'}</td>
+                            <td>${record.log_date}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching attendance:", error);
+            }
+        });
+    }
+
+    function processScan(code) {
+        if (scanCooldown) return;
+        
+        scanCooldown = true;
+        setTimeout(() => { scanCooldown = false; }, 3000);
+        
+        scanResult.textContent = "Scanning...";
+        scanResult.style.color = "black";
+        scanDetails.textContent = "";
+        
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = new Date().toLocaleDateString('en-US', options);
+        const currentDate = new Date().toISOString().split('T')[0];
+        
+        $.ajax({
+            url: 'PHP/process_scan.php',
+            type: 'POST',
+            data: {
+                qrCode: code,
+                scanDate: currentDate
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    const memberType = data.memberType;
+                    const memberData = data.data;
+                    
+                    // Check if this user already scanned within 1 minute
+                    const isNewScan = addToRecentScans(memberData, memberType);
+                    
+                    if (!isNewScan) {
+                        scanResult.textContent = `${memberType.charAt(0).toUpperCase() + memberType.slice(1)} already scanned`;
+                        scanDetails.textContent = `Please wait 1 minute before scanning again`;
+                        scanDetails.style.color = "orange";
+                        scanResult.style.color = "orange";
+                        
+                        setTimeout(() => {
+                            scanResult.textContent = "Waiting for QR code...";
+                            scanResult.style.color = "black";
+                            scanDetails.textContent = "";
+                        }, 3000);
+                        return;
+                    }
+                    
+                    const currentTime = new Date();
+                    const formattedTime = currentTime.toLocaleTimeString('en-US', {
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    scanResult.textContent = `Scanned Successfully: ${memberType.charAt(0).toUpperCase() + memberType.slice(1)}`;
+                    scanDetails.textContent = `ID: ${code} - ${formattedDate} - Time ${data.timeType}: ${formattedTime}`;
+                    scanDetails.style.color = "green";
+                    scanResult.style.color = "green";
+                    
+                    displayUserData(memberType, memberData);
+                    
+                    setTimeout(() => {
+                        scanResult.textContent = "Waiting for QR code...";
+                        scanResult.style.color = "black";
+                        scanDetails.textContent = "";
+                    }, 2000);
+                } else {
+                    if (data.memberType) {
+                        const memberType = data.memberType.charAt(0).toUpperCase() + data.memberType.slice(1);
+                        scanResult.textContent = `${memberType} QR Code Not Registered`;
+                        scanDetails.textContent = data.message;
+                    } else {
+                        scanResult.textContent = data.message || "No record found for that QR code";
+                    }
+                    
+                    scanResult.style.color = "red";
+                    
+                    setTimeout(() => {
+                        scanResult.textContent = "Waiting for QR code...";
+                        scanResult.style.color = "black";
+                        scanDetails.textContent = "";
+                    }, 3000);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                scanResult.textContent = "Server Error";
+                scanResult.style.color = "red";
+                scanDetails.textContent = "Please check server logs";
+                
+                setTimeout(() => {
+                    scanResult.textContent = "Waiting for QR code...";
+                    scanResult.style.color = "black";
+                    scanDetails.textContent = "";
+                }, 2000);
+            }
+        });
+    }
+
+    function scanQRCode() {
+        if (!scanning) return;
+        
+        if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+            canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert"
+            });
+            
+            if (code && /^\d{8}$/.test(code.data)) {
+                processScan(code.data);
+            }
+        }
+        
+        requestAnimationFrame(scanQRCode);
+    }
+
+    // Start the camera and scanning
+    initializeCamera();
+});
+</script>
+</body>
+</html>

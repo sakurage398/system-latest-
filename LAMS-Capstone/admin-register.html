@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="CSS/admin-register.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <span class="title">ALAMS</span>
+        </div>
+        
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <aside class="sidebar">
+           <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+           
+        </aside>
+
+        <div class="notification" id="notification">Registration successful!</div>
+
+        <div class="modal">
+            <div class="modal-content">
+                <p>Do you want to log out?</p>
+                <div class="modal-buttons">
+                    <button class="yes-btn">Yes</button>
+                    <button class="no-btn">No</button>
+                </div>
+            </div>
+        </div>
+        
+        <main class="dashboard">
+            <div class="search-container">
+                <div class="search-bar">
+                    <input type="text" id="search-input" class="search-input" placeholder="Enter Student/Faculty/Staff ID..." />
+                    <button id="search-button" class="search-button">
+                        <i class="fa-solid fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+
+            <div class="scanner-container">
+                <h2>Register QR Code</h2>
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="canvas"></canvas>
+                <p id="scan-result">Waiting for QR code...</p>
+                <p id="scan-details"></p>
+            </div>
+
+            <div class="user-info-container">
+                <div class="user-info hidden" id="user-info">
+                    <!-- User information will be displayed here -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+
+       document.addEventListener("DOMContentLoaded", function () {
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+    const logoutBtn = document.querySelector(".logout-btn");
+    const modal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasContext = canvasElement.getContext('2d');
+    const scanResult = document.getElementById('scan-result');
+    const scanDetails = document.getElementById('scan-details');
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const userInfoContainer = document.getElementById('user-info');
+    const notification = document.getElementById('notification');
+    
+    let scanning = true;
+    let scanCooldown = false;
+    let currentUserData = null;
+    let currentUserType = null;
+
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+    
+    logoutBtn.addEventListener("click", function () {
+        modal.style.display = "flex";
+    });
+
+    yesBtn.addEventListener("click", function () {
+        window.location.href = "login.html";
+    });
+
+    noBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+
+    function showNotification(message, isError = false) {
+        notification.textContent = message;
+        notification.className = isError ? 'notification error' : 'notification';
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    function performSearch() {
+        const idNumber = searchInput.value.trim();
+        
+        if (idNumber === '') {
+            showNotification('Please enter an ID number', true);
+            return;
+        }
+        
+        userInfoContainer.innerHTML = '';
+        userInfoContainer.classList.add('hidden');
+        
+        $.ajax({
+            url: 'PHP/search_member.php',
+            type: 'POST',
+            data: {
+                idNumber: idNumber,
+                userType: 'unknown'
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    currentUserData = data.userData;
+                    currentUserType = data.userType;
+                    
+                    displayUserInfo(data.userData, data.userType);
+                    
+                    if (scanCooldown) {
+                        processScan(idNumber);
+                    }
+                } else {
+                    showNotification(data.message || 'No record found for that ID number', true);
+                    scanResult.textContent = "Waiting for QR code...";
+                    scanResult.style.color = "black";
+                    scanDetails.textContent = "";
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                showNotification('Error fetching user data. Please try again.', true);
+            }
+        });
+    }
+
+    function calculateExpirationDate() {
+        const today = new Date();
+        const monthsToAdd = 5 + Math.floor(Math.random() * 2);
+        const expirationDate = new Date(today.setMonth(today.getMonth() + monthsToAdd));
+        return expirationDate.toISOString().split('T')[0];
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+
+    function displayUserInfo(userData, userType) {
+        userInfoContainer.classList.remove('hidden');
+        
+        let html = `
+            <div class="user-info-wrapper">
+                <div class="profile-picture-container">
+        `;
+        
+        if (userData.picture && userData.picture.trim() !== '') {
+            if (userData.picture.startsWith('data:image/')) {
+                html += `<img src="${userData.picture}" alt="Profile Picture" class="profile-picture">`;
+            } else {
+                const possiblePaths = [
+                    `uploads/${userData.picture}`,
+                    `images/${userData.picture}`,
+                    `img/${userData.picture}`,
+                    userData.picture,
+                    `../uploads/${userData.picture}`,
+                    `./uploads/${userData.picture}`
+                ];
+                
+                html += `<img src="${possiblePaths[0]}" alt="Profile Picture" class="profile-picture" 
+                    onerror="this.onerror=null; this.src='${possiblePaths[1]}';">`;
+            }
+        } else {
+            html += `<div class="no-picture">No Picture Available</div>`;
+        }
+        
+        html += `
+                </div>
+                <div class="user-info-details">
+        `;
+        
+        if (userType === 'student') {
+            html += `
+                <div class="info-item">
+                    <h3>Student Number</h3>
+                    <p>${userData.student_number}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Name</h3>
+                    <p>${userData.name}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Department</h3>
+                    <p>${userData.department}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Program</h3>
+                    <p>${userData.program}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Year Level</h3>
+                    <p>${userData.year_level}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Block</h3>
+                    <p>${userData.block}</p>
+                </div>
+            `;
+        } else if (userType === 'faculty') {
+            html += `
+                <div class="info-item">
+                    <h3>Faculty Number</h3>
+                    <p>${userData.faculty_number}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Name</h3>
+                    <p>${userData.name}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Department</h3>
+                    <p>${userData.department}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Program</h3>
+                    <p>${userData.program}</p>
+                </div>
+            `;
+        } else if (userType === 'staff') {
+            html += `
+                <div class="info-item">
+                    <h3>Staff Number</h3>
+                    <p>${userData.staff_number}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Name</h3>
+                    <p>${userData.name}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Department</h3>
+                    <p>${userData.department}</p>
+                </div>
+                <div class="info-item">
+                    <h3>Role</h3>
+                    <p>${userData.role}</p>
+                </div>
+            `;
+        }
+        
+        const isRegistered = userData.registration_status === 'Registered';
+        let statusHtml = '';
+
+        if (isRegistered) {
+            const today = new Date();
+            const expDate = new Date(userData.expiration_date);
+            const isExpired = today > expDate;
+            
+            statusHtml = `
+                <div class="info-status ${isExpired ? 'status-unregistered' : ''}">
+                    Registration Status: ${isExpired ? 'EXPIRED' : 'Registered'}
+                </div>
+                <div class="info-item">
+                    <h3>Expiration Date</h3>
+                    <p>${formatDate(userData.expiration_date)}</p>
+                </div>
+            `;
+        } else {
+            statusHtml = `
+                <div class="info-status status-unregistered">
+                    Registration Status: ${userData.registration_status}
+                </div>
+            `;
+        }
+        
+        html += statusHtml;
+        html += `
+                </div>
+            </div>
+        `;
+        
+        userInfoContainer.innerHTML = html;
+        userInfoContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function initializeCamera() {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Media devices not supported in this browser');
+            }
+            
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            });
+            
+            videoElement.srcObject = stream;
+            videoElement.play();
+            
+            videoElement.onloadedmetadata = () => {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                requestAnimationFrame(scanQRCode);
+            };
+            
+        } catch (error) {
+            console.error("Camera error:", error);
+            scanResult.textContent = `Camera error: ${error.message}`;
+            scanResult.style.color = 'red';
+            
+            try {
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true 
+                });
+                videoElement.srcObject = fallbackStream;
+                videoElement.play();
+                
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    requestAnimationFrame(scanQRCode);
+                };
+                
+                scanResult.textContent = "Camera started with default settings";
+                scanResult.style.color = 'black';
+            } catch (fallbackError) {
+                console.error("Fallback camera error:", fallbackError);
+                scanResult.textContent = `Camera cannot be accessed. Please check permissions.`;
+            }
+        }
+    }
+
+    function scanQRCode() {
+        if (!scanning) return;
+        
+        if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+            canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert"
+            });
+            
+            if (code) {
+                console.log("QR Code detected:", code.data);
+                
+                if (!scanCooldown) {
+                    handleQRCode(code.data);
+                }
+            }
+        }
+        
+        requestAnimationFrame(scanQRCode);
+    }
+
+    function handleQRCode(qrCode) {
+        scanCooldown = true;
+        setTimeout(() => { scanCooldown = false; }, 2000);
+        
+        scanResult.textContent = `QR Code detected: ${qrCode}`;
+        scanResult.style.color = "blue";
+        
+        if (!currentUserData) {
+            searchInput.value = qrCode;
+            performSearch();
+            return;
+        }
+        
+        processScan(qrCode);
+    }
+
+    function processScan(qrCode) {
+        scanResult.textContent = "Processing...";
+        scanResult.style.color = "black";
+        scanDetails.textContent = "";
+        
+        const formattedDate = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        
+        let idNumber;
+        if (currentUserType === 'student') {
+            idNumber = currentUserData.student_number;
+        } else if (currentUserType === 'faculty') {
+            idNumber = currentUserData.faculty_number;
+        } else if (currentUserType === 'staff') {
+            idNumber = currentUserData.staff_number;
+        }
+        
+        if (qrCode !== idNumber) {
+            scanResult.textContent = "QR code does not match the searched ID";
+            scanResult.style.color = "red";
+            return;
+        }
+        
+        if (currentUserData.registration_status === 'Registered') {
+            scanResult.textContent = "This user is already registered";
+            scanResult.style.color = "orange";
+            return;
+        }
+        
+        $.ajax({
+            url: 'PHP/register_member.php',
+            type: 'POST',
+            data: {
+                idNumber: idNumber,
+                userType: currentUserType,
+                qrCode: qrCode,
+                expirationDate: calculateExpirationDate()
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    scanResult.textContent = `Registration Successful!`;
+                    scanDetails.textContent = `${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)} ID: ${idNumber} - ${formattedDate}`;
+                    scanResult.style.color = "green";
+                    scanDetails.style.color = "green";
+                    
+                    showNotification(`${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)} successfully registered!`);
+                    
+                    currentUserData.registration_status = 'Registered';
+                    currentUserData.expiration_date = data.expirationDate;
+                    displayUserInfo(currentUserData, currentUserType);
+                    
+                    setTimeout(() => {
+                        scanResult.textContent = "Waiting for QR code...";
+                        scanResult.style.color = "black";
+                        scanDetails.textContent = "";
+                    }, 2000);
+                } else {
+                    scanResult.textContent = data.message || "Registration failed";
+                    scanResult.style.color = "red";
+                    
+                    setTimeout(() => {
+                        scanResult.textContent = "Waiting for QR code...";
+                        scanResult.style.color = "black";
+                    }, 2000);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                
+                scanResult.textContent = "Server Error";
+                scanResult.style.color = "red";
+                
+                setTimeout(() => {
+                    scanResult.textContent = "Waiting for QR code...";
+                    scanResult.style.color = "black";
+                }, 2000);
+            }
+        });
+    }
+
+    initializeCamera();
+});
+    </script>
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Infos</title>
+    <link rel="stylesheet" href="CSS/admin-student_perinfo.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <div class="title">ALAMS</div>
+        </div>
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+        </div>
+
+        <div class="dashboard">
+            <div class="tabs-container">
+                <a href="admin-student_perinfo.html" class="tab">Student</a>
+                <a href="admin-faculty_perinfo.html" class="tab">Faculty</a>
+                <a href="admin-staff_perinfo.html" class="tab">Staff</a>
+            </div>
+            <h1>Student Information</h1>
+
+            <div class="content-container">
+                <div class="search-container">
+                    <input type="text" class="search-box" placeholder="Search students...">
+                    <button class="add-user-btn"><i class="fa-solid fa-plus"></i>Add Student</button>
+                </div>
+
+                <div class="user-table-container">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Student Number</th>
+                                <th>Picture</th>
+                                <th>Pin Code</th>
+                                <th>Name</th>
+                                <th>
+                                    Department
+                                    <select id="department-filter" class="filter-select">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Program
+                                    <select id="program-filter" class="filter-select">
+                                        <option value="">All Programs</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Year
+                                    <select id="year-filter" class="filter-select">
+                                        <option value="">All Years</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Block
+                                    <select id="block-filter" class="filter-select">
+                                        <option value="">All Blocks</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Registration
+                                    <select id="registration-filter" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="Registered">Registered</option>
+                                        <option value="Unregistered">Unregistered</option>
+                                    </select>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table body will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            Are you sure you want to logout?
+            <div class="modal-buttons">
+                <button class="yes-btn">Yes</button>
+                <button class="no-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="add-user-modal">
+        <div class="add-user-form">
+            <div class="form-header">
+                <div class="form-title"><i class="fa-solid fa-plus"></i>Add Student Information</div>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="add-student-form">
+                <div class="form-group">
+                <label for="student-number">Student Number:</label>
+                <input type="number" id="student-number" pattern="[0-9]*" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label for="student-name">Name:</label>
+                    <input type="text" id="student-name" placeholder="Full Name">
+                </div>
+                <div class="form-group">
+                    <label for="student-department">Department:</label>
+                    <select id="student-department">
+                        <option value="" disabled selected>Select Department</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="student-program">Program:</label>
+                    <select id="student-program">
+                        <option value="" disabled selected>Select Program</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="student-year">Year:</label>
+                    <select id="student-year">
+                        <option value="" disabled selected>Select Year</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="student-block">Block:</label>
+                    <select id="student-block">
+                        <option value="" disabled selected>Select Block</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                <label for="student-picture">Picture:</label>
+                <div class="picture-upload">
+                    <div class="picture-preview-container">
+                        <img id="picture-preview" class="picture-preview" src="" alt="Preview">
+                        <div id="picture-placeholder" class="picture-placeholder">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="student-picture" accept="image/*" style="display: none;">
+                    <div class="picture-actions">
+                        <button type="button" class="picture-btn" onclick="document.getElementById('student-picture').click()">
+                            Choose Picture
+                        </button>
+                        <button type="button" class="remove-picture-btn" id="remove-picture-btn" style="display: none;">
+                            Remove Picture
+                        </button>
+                    </div>
+                </div>
+            </div>
+                
+                <div class="form-group">
+                    <label for="student-pin">Pin Code:</label>
+                    <div class="pin-display" id="pin-display">------</div>
+                    <button type="button" class="generate-pin-btn" id="generate-pin">
+                        <i class="fa-solid fa-refresh"></i> Generate New PIN
+                    </button>
+                    <input type="hidden" id="student-pin-code">
+                </div>
+                
+                <div class="form-group">
+                    <label for="student-registration">Registration Status:</label>
+                    <div class="role-display" id="student-registration">Unregistered</div>
+                    <small>Note: Status will change to "Registered" when QR code is scanned.</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn">Cancel</button>
+                    <button type="button" class="save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="picture-modal" id="picture-modal">
+        <div class="picture-modal-content">
+            <button class="picture-modal-close" onclick="closePictureModal()">&times;</button>
+            <img id="modal-picture" src="" alt="Student Picture">
+        </div>
+    </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    loadStudents();
+    
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+    const logoutBtn = document.querySelector(".logout-btn");
+    const logoutModal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+    const addStudentBtn = document.querySelector(".add-user-btn");
+    const addUserModal = document.querySelector(".add-user-modal");
+    const closeModalBtn = document.querySelector(".close-btn");
+    const cancelBtn = document.querySelector(".cancel-btn");
+    const saveBtn = document.querySelector(".save-btn");
+    const studentForm = document.querySelector("#add-student-form");
+    const formTitle = document.querySelector(".form-title");
+    
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+    
+    logoutBtn.addEventListener("click", function () {
+        logoutModal.style.display = "flex";
+    });
+
+    yesBtn.addEventListener("click", function () {
+        window.location.href = "login.html";
+    });
+
+    noBtn.addEventListener("click", function () {
+        logoutModal.style.display = "none";
+    });
+    
+    const departmentsData = {
+        "College of Engineering and Architecture": {
+            programs: [
+                { name: "BS Electronics Engineering", years: [1, 2, 3, 4] },
+                { name: "BS Electrical Engineering", years: [1, 2, 3, 4] },
+                { name: "BS Mechanical Engineering", years: [1, 2, 3, 4] },
+                { name: "BS Civil Engineering", years: [1, 2, 3, 4] },
+                { name: "BS Computer Engineering", years: [1, 2, 3, 4] }
+            ]
+        },
+        "College of Computer Studies": {
+            programs: [
+                { name: "BS Information Technology", years: [1, 2, 3, 4] },
+                { name: "BS Computer Science", years: [1, 2, 3, 4] }
+            ]
+        },
+        "College of Accountancy and Business Program": {
+            programs: [
+                { name: "BS Accountancy", years: [1, 2, 3, 4] },
+                { name: "BS Business Administration", years: [1, 2, 3, 4] }
+            ]
+        },
+        "College of Maritime Studies": {
+            programs: [
+                { name: "BS Maritime Engineering", years: [1, 2, 3] },
+                { name: "BS Maritime Transportation", years: [1, 2, 3] }
+            ]
+        },
+        "College of Hospitality and Tourism Management": {
+            programs: [
+                { name: "BS Hospitality Management", years: [1, 2, 3, 4] },
+                { name: "BS Tourism Management", years: [1, 2, 3, 4] }
+            ]
+        },
+        "College of Criminal Justice Education": {
+            programs: [
+                { name: "BS Criminology", years: [1, 2, 3, 4] }
+            ]
+        },
+        "College of Education and Journalism": {
+            programs: [
+                { name: "Bachelor of Secondary Education", years: [1, 2, 3, 4] },
+                { name: "Bachelor of Elementary Education", years: [1, 2, 3, 4] }
+            ]
+        }
+    };
+    
+    initializeFilters();
+    initializePictureHandling();
+    initializePinGeneration();
+    
+    addStudentBtn.addEventListener("click", showAddStudentForm);
+    closeModalBtn.addEventListener("click", closeUserModal);
+    cancelBtn.addEventListener("click", closeUserModal);
+    saveBtn.addEventListener("click", saveStudent);
+    
+    const searchBox = document.querySelector(".search-box");
+    if (searchBox) searchBox.addEventListener("input", filterStudents);
+    
+    const departmentFilter = document.getElementById('department-filter');
+    const programFilter = document.getElementById('program-filter');
+    const yearFilter = document.getElementById('year-filter');
+    const blockFilter = document.getElementById('block-filter');
+    const registrationFilter = document.getElementById('registration-filter');
+    
+    if (departmentFilter) departmentFilter.addEventListener('change', handleDepartmentChange);
+    if (programFilter) programFilter.addEventListener('change', filterStudents);
+    if (yearFilter) yearFilter.addEventListener('change', filterStudents);
+    if (blockFilter) blockFilter.addEventListener('change', filterStudents);
+    if (registrationFilter) registrationFilter.addEventListener('change', filterStudents);
+    
+    let currentPictureData = null;
+    
+    function loadStudents() {
+        const formData = new FormData();
+        formData.append('action', 'get_all');
+        
+        fetch('PHP/admin-student_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                populateStudentsTable(data.data);
+            } else {
+                console.error('Error loading students:', data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    function populateStudentsTable(students) {
+        const tbody = document.querySelector(".user-table tbody");
+        tbody.innerHTML = '';
+        
+        if (students.length === 0) {
+            const noRecordsRow = document.createElement("tr");
+            noRecordsRow.innerHTML = `
+                <td colspan="10" style="text-align: center; padding: 20px; font-weight: bold;">No student records found.</td>
+            `;
+            tbody.appendChild(noRecordsRow);
+            return;
+        }
+        
+        students.forEach(student => {
+            const row = document.createElement("tr");
+            row.dataset.id = student.id;
+            
+            const statusColor = student.registration_status === 'Registered' ? 'green' : 'red';
+            
+            const pictureCell = student.picture ? 
+                `<img src="${student.picture}" alt="Student" class="profile-picture" onclick="viewPicture('${student.picture}')">` :
+                `<div class="no-picture"><i class="fa-solid fa-user"></i></div>`;
+            
+            const pinCodeCell = student.pin_code ? 
+                `<span class="pin-code-display">${student.pin_code}</span>` :
+                `<span style="color: #999;">Not Set</span>`;
+            
+            row.innerHTML = `
+                <td>${student.student_number}</td>
+                <td>${pictureCell}</td>
+                <td>${pinCodeCell}</td>
+                <td>${student.name}</td>
+                <td>${student.department}</td>
+                <td>${student.program}</td>
+                <td>${student.year_level}</td>
+                <td>${student.block}</td>
+                <td><span style="color: ${statusColor}; font-weight: bold;">${student.registration_status || 'Unregistered'}</span></td>
+                <td>
+                    <i class="fa-solid fa-edit" style="color: #8869BB; margin-right: 10px; cursor: pointer;"></i>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        setupActionButtons();
+    }
+    
+    function setupActionButtons() {
+        const editButtons = document.querySelectorAll('.fa-edit');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const studentId = row.dataset.id;
+                const studentNumber = row.cells[0].textContent;
+                const name = row.cells[3].textContent;
+                const department = row.cells[4].textContent;
+                const program = row.cells[5].textContent;
+                const year = row.cells[6].textContent;
+                const block = row.cells[7].textContent;
+                const registrationStatus = row.cells[8].textContent;
+                
+                showEditStudentForm(studentId, studentNumber, name, department, program, year, block, registrationStatus);
+            });
+        });
+    }
+    
+    function showAddStudentForm() {
+        formTitle.textContent = "Add Student Information";
+        studentForm.reset();
+        resetPictureUpload();
+        
+        generateNewPin();
+        
+        document.querySelector("#student-registration").textContent = "Unregistered";
+        
+        const studentDepartment = document.querySelector("#student-department");
+        studentDepartment.innerHTML = '<option value="" disabled selected>Select Department</option>';
+        Object.keys(departmentsData).forEach(dept => {
+            const option = document.createElement("option");
+            option.value = dept;
+            option.textContent = dept;
+            studentDepartment.appendChild(option);
+        });
+        
+        setupDepartmentChangeEvent();
+        
+        delete saveBtn.dataset.studentId;
+        
+        addUserModal.style.display = "flex";
+    }
+    
+    function showEditStudentForm(studentId, studentNumber, name, department, program, year, block, registrationStatus) {
+        formTitle.textContent = "Edit Student Information";
+        
+        const formData = new FormData();
+        formData.append('action', 'get_student');
+        formData.append('id', studentId);
+        
+        fetch('PHP/admin-student_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const student = data.data;
+                
+                document.querySelector("#student-number").value = student.student_number;
+                document.querySelector("#student-name").value = student.name;
+                document.querySelector("#student-registration").textContent = student.registration_status || 'Unregistered';
+                
+                const preview = document.getElementById('picture-preview');
+                const placeholder = document.getElementById('picture-placeholder');
+                const removeBtn = document.getElementById('remove-picture-btn');
+                
+                if (student.picture) {
+                    preview.src = student.picture;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    removeBtn.style.display = 'block';
+                    currentPictureData = student.picture;
+                } else {
+                    preview.style.display = 'none';
+                    placeholder.style.display = 'flex';
+                    removeBtn.style.display = 'none';
+                    currentPictureData = null;
+                }
+                
+                if (student.pin_code) {
+                    document.getElementById('pin-display').textContent = student.pin_code;
+                    document.getElementById('student-pin-code').value = student.pin_code;
+                } else {
+                    generateNewPin();
+                }
+                
+                const studentDepartment = document.querySelector("#student-department");
+                studentDepartment.innerHTML = '<option value="" disabled>Select Department</option>';
+                Object.keys(departmentsData).forEach(dept => {
+                    const option = document.createElement("option");
+                    option.value = dept;
+                    option.textContent = dept;
+                    if (dept === student.department) option.selected = true;
+                    studentDepartment.appendChild(option);
+                });
+                
+                const studentProgram = document.querySelector("#student-program");
+                if (student.department && departmentsData[student.department]) {
+                    studentProgram.innerHTML = '<option value="" disabled>Select Program</option>';
+                    departmentsData[student.department].programs.forEach(prog => {
+                        const option = document.createElement("option");
+                        option.value = prog.name;
+                        option.textContent = prog.name;
+                        if (prog.name === student.program) option.selected = true;
+                        studentProgram.appendChild(option);
+                    });
+                }
+                
+                const studentYear = document.querySelector("#student-year");
+                if (student.department && student.program) {
+                    const programData = departmentsData[student.department]?.programs.find(p => p.name === student.program);
+                    if (programData) {
+                        studentYear.innerHTML = '<option value="" disabled>Select Year</option>';
+                        programData.years.forEach(year => {
+                            const option = document.createElement("option");
+                            const suffix = getOrdinalSuffix(year);
+                            const yearValue = `${year}${suffix} Year`;
+                            option.value = yearValue;
+                            option.textContent = yearValue;
+                            if (yearValue === student.year_level) option.selected = true;
+                            studentYear.appendChild(option);
+                        });
+                    }
+                }
+                
+                const studentBlock = document.querySelector("#student-block");
+                studentBlock.innerHTML = '<option value="" disabled>Select Block</option>';
+                for (let block = 1; block <= 15; block++) {
+                    const option = document.createElement("option");
+                    const blockValue = `Block ${block}`;
+                    option.value = blockValue;
+                    option.textContent = blockValue;
+                    if (blockValue === student.block) option.selected = true;
+                    studentBlock.appendChild(option);
+                }
+                
+                setupDepartmentChangeEvent();
+                
+                saveBtn.dataset.studentId = studentId;
+                addUserModal.style.display = "flex";
+            } else {
+                alert('Error loading student data: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading student data: ' + error.message);
+        });
+    }
+    
+    function setupDepartmentChangeEvent() {
+        const studentDepartment = document.querySelector("#student-department");
+        const studentProgram = document.querySelector("#student-program");
+        
+        const newDepartment = studentDepartment.cloneNode(true);
+        studentDepartment.parentNode.replaceChild(newDepartment, studentDepartment);
+        
+        const newProgram = studentProgram.cloneNode(true);
+        studentProgram.parentNode.replaceChild(newProgram, studentProgram);
+        
+        newDepartment.addEventListener("change", function() {
+            const selectedDepartment = newDepartment.value;
+            const programs = departmentsData[selectedDepartment]?.programs || [];
+            
+            newProgram.innerHTML = '<option value="" disabled selected>Select Program</option>';
+            programs.forEach(program => {
+                const option = document.createElement("option");
+                option.value = program.name;
+                option.textContent = program.name;
+                newProgram.appendChild(option);
+            });
+            
+            document.querySelector("#student-year").innerHTML = '<option value="" disabled selected>Select Year</option>';
+            document.querySelector("#student-block").innerHTML = '<option value="" disabled selected>Select Block</option>';
+        });
+        
+        newProgram.addEventListener("change", function() {
+            const selectedDepartment = newDepartment.value;
+            const selectedProgram = newProgram.value;
+            const programData = departmentsData[selectedDepartment]?.programs.find(program => program.name === selectedProgram);
+            
+            if (programData) {
+                const studentYear = document.querySelector("#student-year");
+                studentYear.innerHTML = '<option value="" disabled selected>Select Year</option>';
+                programData.years.forEach(year => {
+                    const option = document.createElement("option");
+                    const suffix = getOrdinalSuffix(year);
+                    option.value = `${year}${suffix} Year`;
+                    option.textContent = `${year}${suffix} Year`;
+                    studentYear.appendChild(option);
+                });
+                
+                const studentBlock = document.querySelector("#student-block");
+                studentBlock.innerHTML = '<option value="" disabled selected>Select Block</option>';
+                for (let block = 1; block <= 15; block++) {
+                    const option = document.createElement("option");
+                    option.value = `Block ${block}`;
+                    option.textContent = `Block ${block}`;
+                    studentBlock.appendChild(option);
+                }
+            }
+        });
+    }
+    
+    function closeUserModal() {
+        addUserModal.style.display = "none";
+        currentPictureData = null;
+    }
+    
+    function saveStudent() {
+        const studentNumber = document.querySelector("#student-number").value;
+        const name = document.querySelector("#student-name").value;
+        const department = document.querySelector("#student-department").value;
+        const program = document.querySelector("#student-program").value;
+        const year = document.querySelector("#student-year").value;
+        const block = document.querySelector("#student-block").value;
+        const registrationStatus = document.querySelector("#student-registration").textContent;
+        const pinCode = document.getElementById('student-pin-code').value;
+        const pictureFile = document.getElementById('student-picture').files[0];
+        
+        if (studentNumber && name && department && program && year && block) {
+            const formData = new FormData();
+            const isEdit = !!saveBtn.dataset.studentId;
+            
+            if (isEdit) {
+                formData.append('action', 'edit');
+                formData.append('id', saveBtn.dataset.studentId);
+            } else {
+                formData.append('action', 'add');
+            }
+            
+            formData.append('student_number', studentNumber.toString());
+            formData.append('student_name', name);
+            formData.append('department', department);
+            formData.append('program', program);
+            formData.append('year', year);
+            formData.append('block', block);
+            formData.append('registration_status', registrationStatus);
+            formData.append('pin_code', pinCode);
+            
+            if (pictureFile) {
+                formData.append('picture_file', pictureFile);
+            } else if (currentPictureData && !pictureFile && isEdit) {
+                formData.append('existing_picture', currentPictureData);
+            }
+            
+            fetch('PHP/admin-student_perinfo.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    closeUserModal();
+                    loadStudents();
+                    alert(isEdit ? 'Student updated successfully!' : 'Student added successfully!');
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again. Error: ' + error.message);
+            });
+        } else {
+            alert("Please fill in all fields.");
+        }
+    }
+    
+    function initializePictureHandling() {
+        const pictureInput = document.getElementById('student-picture');
+        const removePictureBtn = document.getElementById('remove-picture-btn');
+
+        if (pictureInput) {
+            pictureInput.addEventListener('change', handlePictureUpload);
+        }
+        if (removePictureBtn) {
+            removePictureBtn.addEventListener('click', removePicture);
+        }
+    }
+
+    function handlePictureUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentPictureData = e.target.result;
+                const preview = document.getElementById('picture-preview');
+                const placeholder = document.getElementById('picture-placeholder');
+                const removeBtn = document.getElementById('remove-picture-btn');
+                
+                preview.src = currentPictureData;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                removeBtn.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removePicture() {
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removeBtn = document.getElementById('remove-picture-btn');
+        const pictureInput = document.getElementById('student-picture');
+        
+        preview.style.display = 'none';
+        placeholder.style.display = 'flex';
+        removeBtn.style.display = 'none';
+        pictureInput.value = '';
+        currentPictureData = null;
+    }
+
+    function resetPictureUpload() {
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removeBtn = document.getElementById('remove-picture-btn');
+        const fileInput = document.getElementById('student-picture');
+        
+        preview.style.display = 'none';
+        placeholder.style.display = 'flex';
+        removeBtn.style.display = 'none';
+        fileInput.value = '';
+        currentPictureData = null;
+    }
+
+    function initializePinGeneration() {
+        const generatePinBtn = document.getElementById('generate-pin');
+        if (generatePinBtn) {
+            generatePinBtn.addEventListener('click', generateNewPin);
+        }
+        
+        generateNewPin();
+    }
+
+    function generateNewPin() {
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        const pinDisplay = document.getElementById('pin-display');
+        const pinInput = document.getElementById('student-pin-code');
+        
+        if (pinDisplay) {
+            pinDisplay.textContent = pin;
+        }
+        if (pinInput) {
+            pinInput.value = pin;
+        }
+    }
+
+    window.viewPicture = function(pictureData) {
+        const modal = document.getElementById('picture-modal');
+        const modalPicture = document.getElementById('modal-picture');
+        
+        if (modal && modalPicture) {
+            modalPicture.src = pictureData;
+            modal.style.display = 'flex';
+        }
+    }
+
+    window.closePictureModal = function() {
+        const modal = document.getElementById('picture-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    function initializeFilters() {
+        const departmentFilter = document.getElementById('department-filter');
+        if (departmentFilter) {
+            departmentFilter.innerHTML = '<option value="">All Departments</option>';
+            Object.keys(departmentsData).forEach(dept => {
+                const option = document.createElement("option");
+                option.value = dept;
+                option.textContent = dept;
+                departmentFilter.appendChild(option);
+            });
+        }
+        
+        const programFilter = document.getElementById('program-filter');
+        if (programFilter) {
+            programFilter.innerHTML = '<option value="">All Programs</option>';
+            let allPrograms = new Set();
+            Object.values(departmentsData).forEach(dept => {
+                dept.programs.forEach(program => {
+                    allPrograms.add(program.name);
+                });
+            });
+            Array.from(allPrograms).sort().forEach(program => {
+                const option = document.createElement("option");
+                option.value = program;
+                option.textContent = program;
+                programFilter.appendChild(option);
+            });
+        }
+        
+        const yearFilter = document.getElementById('year-filter');
+        if (yearFilter) {
+            yearFilter.innerHTML = '<option value="">All Years</option>';
+            for(let i = 1; i <= 4; i++) {
+                const option = document.createElement("option");
+                const suffix = getOrdinalSuffix(i);
+                option.value = `${i}${suffix} Year`;
+                option.textContent = `${i}${suffix} Year`;
+                yearFilter.appendChild(option);
+            }
+        }
+        
+        const blockFilter = document.getElementById('block-filter');
+        if (blockFilter) {
+            blockFilter.innerHTML = '<option value="">All Blocks</option>';
+            for(let i = 1; i <= 15; i++) {
+                const option = document.createElement("option");
+                option.value = `Block ${i}`;
+                option.textContent = `Block ${i}`;
+                blockFilter.appendChild(option);
+            }
+        }
+    }
+    
+    function handleDepartmentChange() {
+        const selectedDept = departmentFilter.value;
+        
+        if (selectedDept) {
+            programFilter.innerHTML = '<option value="">All Programs</option>';
+            departmentsData[selectedDept].programs.forEach(program => {
+                const option = document.createElement("option");
+                option.value = program.name;
+                option.textContent = program.name;
+                programFilter.appendChild(option);
+            });
+        } else {
+            programFilter.innerHTML = '<option value="">All Programs</option>';
+            let allPrograms = new Set();
+            Object.values(departmentsData).forEach(dept => {
+                dept.programs.forEach(program => {
+                    allPrograms.add(program.name);
+                });
+            });
+            Array.from(allPrograms).sort().forEach(program => {
+                const option = document.createElement("option");
+                option.value = program;
+                option.textContent = program;
+                programFilter.appendChild(option);
+            });
+        }
+        
+        filterStudents();
+    }
+    
+    function filterStudents() {
+        const searchTerm = document.querySelector(".search-box").value.toLowerCase();
+        const department = departmentFilter ? departmentFilter.value : '';
+        const program = programFilter ? programFilter.value : '';
+        const year = yearFilter ? yearFilter.value : '';
+        const block = blockFilter ? blockFilter.value : '';
+        const registration = document.getElementById('registration-filter') ? document.getElementById('registration-filter').value : '';
+        
+        const formData = new FormData();
+        formData.append('action', 'search');
+        formData.append('search_term', searchTerm);
+        formData.append('department', department);
+        formData.append('program', program);
+        formData.append('year', year);
+        formData.append('block', block);
+        formData.append('registration_status', registration);
+        
+        fetch('PHP/admin-student_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                populateStudentsTable(data.data);
+            } else {
+                console.error('Error searching students:', data.message);
+                const tbody = document.querySelector(".user-table tbody");
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 20px; font-weight: bold;">No student records found.</td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const tbody = document.querySelector(".user-table tbody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 20px; font-weight: bold;">No student records found.</td>
+                </tr>
+            `;
+        });
+    }
+    
+    function getOrdinalSuffix(num) {
+        if (num === 1) return "st";
+        if (num === 2) return "nd";
+        if (num === 3) return "rd";
+        return "th";
+    }
+});
+</script>
+</body>
+</html>

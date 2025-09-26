@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Faculty Infos</title>
+    <link rel="stylesheet" href="CSS/admin-faculty_perinfo.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <div class="title">ALAMS </div>
+        </div>
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+           <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+        </div>
+
+        <div class="dashboard">
+            <div class="tabs-container">
+                <a href="admin-student_perinfo.html" class="tab">Student</a>
+                <a href="admin-faculty_perinfo.html" class="tab">Faculty</a>
+                <a href="admin-staff_perinfo.html" class="tab">Staff</a>
+            </div>
+            <h1>Faculty Information</h1>
+
+            <div class="content-container">
+                <div class="search-container">
+                    <input type="text" class="search-box" placeholder="Search faculty...">
+                    <button class="add-user-btn"><i class="fa-solid fa-plus"></i>Add Faculty</button>
+                </div>
+
+                                <!-- Replace the current table section with this -->
+                <div class="user-table-container">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Faculty Number</th>
+                                <th>Picture</th>
+                                <th>Pincode</th>
+                                <th>Name</th>
+                                <th>
+                                    Department
+                                    <select id="department-filter" class="filter-select">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Program
+                                    <select id="program-filter" class="filter-select">
+                                        <option value="">All Programs</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    Registration
+                                    <select id="registration-filter" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="Registered">Registered</option>
+                                        <option value="Unregistered">Unregistered</option>
+                                    </select>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Faculty data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            Are you sure you want to logout?
+            <div class="modal-buttons">
+                <button class="yes-btn">Yes</button>
+                <button class="no-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="add-user-modal">
+        <div class="add-user-form">
+            <div class="form-header">
+                <div class="form-title"> <i class="fa-solid fa-plus"></i>Add Faculty Information</div>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="add-faculty-form">
+                <div class="form-group">
+                    <label for="faculty-number">Faculty Number:</label>
+                    <input type="number" id="faculty-number">
+                </div>
+                <div class="form-group">
+                    <label for="faculty-name">Name:</label>
+                    <input type="text" id="faculty-name" placeholder="Full Name">
+                </div>
+                <div class="form-group">
+                    <label for="faculty-department">Department:</label>
+                    <select id="faculty-department">
+                        <option value="" disabled selected>Select Department</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="faculty-program">Program:</label>
+                    <select id="faculty-program">
+                        <option value="" disabled selected>Select Program</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                <label for="faculty-picture">Picture:</label>
+                <div class="picture-upload">
+                    <div class="picture-placeholder" id="picture-placeholder">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <img class="picture-preview" id="picture-preview" alt="Preview">
+                    <input type="file" id="faculty-picture" accept="image/*" style="display: none;">
+                    <button type="button" class="picture-btn" onclick="document.getElementById('faculty-picture').click()">
+                        Choose Picture
+                    </button>
+                    <button type="button" class="remove-picture-btn" id="remove-picture-btn" style="display: none;">
+                        Remove Picture
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="faculty-pincode">Pin Code:</label>
+                <div class="pin-display" id="pin-display">------</div>
+                <button type="button" class="generate-pin-btn" id="generate-pin">
+                    <i class="fa-solid fa-refresh"></i> Generate New PIN
+                </button>
+                <input type="hidden" id="faculty-pin-code">
+            </div>
+                <!-- Add the Registration Status form group here -->
+                <div class="form-group">
+                    <label for="faculty-registration">Registration Status:</label>
+                    <div class="role-display" id="faculty-registration">Unregistered</div>
+                    <small>Note: Status will change to "Registered" when QR code is scanned.</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn">Cancel</button>
+                    <button type="button" class="save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+    
+    const logoutBtn = document.querySelector(".logout-btn");
+    const logoutModal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+
+    logoutBtn.addEventListener("click", function () {
+        logoutModal.style.display = "flex";
+    });
+
+    yesBtn.addEventListener("click", function () {
+        window.location.href = "login.html";
+    });
+
+    noBtn.addEventListener("click", function () {
+        logoutModal.style.display = "none";
+    });
+    
+    const addFacultyBtn = document.querySelector(".add-user-btn");
+    const addUserModal = document.querySelector(".add-user-modal");
+    const closeModalBtn = document.querySelector(".close-btn");
+    const cancelBtn = document.querySelector(".cancel-btn");
+    const formTitle = document.querySelector(".form-title");
+    
+    const departmentsData = {
+        "College of Engineering and Architecture": {
+            programs: ["BS Electronics Engineering", "BS Electrical Engineering", "BS Mechanical Engineering"]
+        },
+        "College of Computer Studies": {
+            programs: ["BS Information Technology", "BS Computer Science"]
+        },
+        "College of Accountancy and Business Program": {
+            programs: ["BS Accountancy", "BS Business Administration"]
+        },
+        "College of Maritime Studies": {
+            programs: ["BS Maritime Engineering", "BS Maritime Transportation"]
+        },
+        "College of Hospitality and Tourism Management": {
+            programs: ["BS Hospitality Management", "BS Tourism Management"]
+        },
+        "College of Criminal Justice Education": {
+            programs: ["BS Criminology"]
+        },
+        "College of Education and Journalism": {
+            programs: ["Bachelor of Secondary Education", "Bachelor of Elementary Education"]
+        }
+    };
+    
+    const departmentFilter = document.getElementById('department-filter');
+    const programFilter = document.getElementById('program-filter');
+    
+    function initializeFilters() {
+        departmentFilter.innerHTML = '<option value="">All Departments</option>';
+        Object.keys(departmentsData).forEach(dept => {
+            const option = document.createElement("option");
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+        
+        programFilter.innerHTML = '<option value="">All Programs</option>';
+        let allPrograms = new Set();
+        Object.values(departmentsData).forEach(dept => {
+            dept.programs.forEach(program => {
+                allPrograms.add(program);
+            });
+        });
+        Array.from(allPrograms).sort().forEach(program => {
+            const option = document.createElement("option");
+            option.value = program;
+            option.textContent = program;
+            programFilter.appendChild(option);
+        });
+    }
+    
+    initializeFilters();
+    
+    loadFacultyData();
+    
+    function applyFilters() {
+        const deptValue = departmentFilter.value;
+        const progValue = programFilter.value;
+        const regValue = document.getElementById('registration-filter').value;
+        const searchValue = document.querySelector(".search-box").value.toLowerCase();
+        
+        const rows = document.querySelectorAll(".user-table tbody tr");
+        
+        rows.forEach(row => {
+            if (row.classList.contains('no-records-message')) {
+                return;
+            }
+            
+            const facultyNumber = row.cells[0].textContent.toLowerCase();
+            const name = row.cells[1].textContent.toLowerCase();
+            const department = row.cells[2].textContent.toLowerCase();
+            const program = row.cells[3].textContent.toLowerCase();
+            const registration = row.cells[4].textContent.toLowerCase();
+            
+            const matchesDept = !deptValue || department.includes(deptValue.toLowerCase());
+            const matchesProg = !progValue || program.includes(progValue.toLowerCase());
+            const matchesReg = !regValue || registration.trim() === regValue.toLowerCase();
+            const matchesSearch = !searchValue || 
+                                facultyNumber.includes(searchValue) || 
+                                name.includes(searchValue) || 
+                                department.includes(searchValue) || 
+                                program.includes(searchValue);
+            
+            if (matchesDept && matchesProg && matchesReg && matchesSearch) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+        
+        const visibleRows = document.querySelectorAll(".user-table tbody tr:not([style*='display: none'])");
+        const tbody = document.querySelector(".user-table tbody");
+        
+        const existingMessage = document.querySelector(".no-records-message");
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        if (visibleRows.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = "no-records-message";
+            emptyRow.innerHTML = '<td colspan="8" style="text-align: center; font-weight:bold;">No faculty records found</td>';
+            tbody.appendChild(emptyRow);
+        }
+    }
+
+    if (departmentFilter) departmentFilter.addEventListener('change', applyFilters);
+    if (programFilter) programFilter.addEventListener('change', applyFilters);
+    
+    const registrationFilter = document.getElementById('registration-filter');
+    if (registrationFilter) registrationFilter.addEventListener('change', applyFilters);
+    
+    const searchBox = document.querySelector(".search-box");
+    if (searchBox) {
+        searchBox.addEventListener("input", function() {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(applyFilters, 300);
+        });
+    }
+    
+    addFacultyBtn.addEventListener("click", function() {
+        formTitle.textContent = "Add Faculty Information";
+        
+        const facultyDepartment = document.querySelector("#faculty-department");
+        facultyDepartment.innerHTML = '<option value="" disabled selected>Select Department</option>';
+        Object.keys(departmentsData).forEach(dept => {
+            const option = document.createElement("option");
+            option.value = dept;
+            option.textContent = dept;
+            facultyDepartment.appendChild(option);
+        });
+        
+        facultyDepartment.addEventListener("change", function() {
+            const selectedDept = facultyDepartment.value;
+            const programs = departmentsData[selectedDept]?.programs || [];
+            const facultyProgram = document.querySelector("#faculty-program");
+            facultyProgram.innerHTML = '<option value="" disabled selected>Select Program</option>';
+            programs.forEach(program => {
+                const option = document.createElement("option");
+                option.value = program;
+                option.textContent = program;
+                facultyProgram.appendChild(option);
+            });
+        });
+        
+        document.querySelector("#faculty-number").value = "";
+        document.querySelector("#faculty-name").value = "";
+        addUserModal.style.display = "flex";
+        
+        const saveBtn = document.querySelector(".save-btn");
+        delete saveBtn.dataset.facultyId;
+    });
+    
+    closeModalBtn.addEventListener("click", function() {
+        addUserModal.style.display = "none";
+    });
+    
+    cancelBtn.addEventListener("click", function() {
+        addUserModal.style.display = "none";
+    });
+    
+    const saveBtn = document.querySelector(".save-btn");
+    const facultyForm = document.querySelector("#add-faculty-form");
+    
+    saveBtn.addEventListener("click", function() {
+        const formData = new FormData();
+        const pictureFile = document.querySelector("#faculty-picture").files[0];
+        
+        formData.append('faculty_number', document.querySelector("#faculty-number").value);
+        formData.append('name', document.querySelector("#faculty-name").value);
+        formData.append('department', document.querySelector("#faculty-department").value);
+        formData.append('program', document.querySelector("#faculty-program").value);
+        
+        if (pictureFile) {
+            formData.append('picture', pictureFile);
+        }
+        
+        const pincode = document.querySelector("#faculty-pin-code").value;
+        if (pincode) {
+            formData.append('pincode', pincode);
+        }
+        
+        formData.append('action', this.dataset.facultyId ? 'update_faculty' : 'add_faculty');
+        
+        if (this.dataset.facultyId) {
+            formData.append('faculty_id', this.dataset.facultyId);
+        }
+        
+        fetch('PHP/admin-faculty_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert('Faculty updated successfully', 'success');
+                if (data.picture) {
+                    document.querySelectorAll(`img[alt="Profile"][data-id="${this.dataset.facultyId}"]`).forEach(img => {
+                        img.src = data.picture + '?' + new Date().getTime();
+                    });
+                }
+                addUserModal.style.display = "none";
+                loadFacultyData();
+            } else {
+                showAlert('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred', 'error');
+        });
+    });
+
+    function resetPictureUpload() {
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removeBtn = document.getElementById('remove-picture-btn');
+        const fileInput = document.getElementById('faculty-picture');
+        
+        preview.style.display = 'none';
+        placeholder.style.display = 'flex';
+        removeBtn.style.display = 'none';
+        fileInput.value = '';
+    }
+
+    initializePinGeneration();
+
+    function initializePinGeneration() {
+        const generatePinBtn = document.getElementById('generate-pin');
+        if (generatePinBtn) {
+            generatePinBtn.addEventListener('click', generateNewPin);
+        }
+        
+        generateNewPin();
+    }
+
+    function generateNewPin() {
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        const pinDisplay = document.getElementById('pin-display');
+        const pinInput = document.getElementById('faculty-pin-code');
+        
+        if (pinDisplay) {
+            pinDisplay.textContent = pin;
+        }
+        if (pinInput) {
+            pinInput.value = pin;
+        }
+    }
+        
+    document.getElementById('faculty-picture').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('picture-preview');
+                const placeholder = document.getElementById('picture-placeholder');
+                const removeBtn = document.getElementById('remove-picture-btn');
+                
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                removeBtn.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('remove-picture-btn').addEventListener('click', function() {
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removeBtn = document.getElementById('remove-picture-btn');
+        const fileInput = document.getElementById('faculty-picture');
+        
+        preview.style.display = 'none';
+        placeholder.style.display = 'flex';
+        removeBtn.style.display = 'none';
+        fileInput.value = '';
+    });
+    
+    function loadFacultyData() {
+        const formData = new FormData();
+        formData.append('action', 'get_faculty');
+        
+        fetch('PHP/admin-faculty_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                populateFacultyTable(data.data);
+            } else {
+                showAlert('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    function populateFacultyTable(facultyData) {
+        const tbody = document.querySelector(".user-table tbody");
+        tbody.innerHTML = '';
+        
+        if (facultyData.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = "no-records-message";
+            emptyRow.innerHTML = '<td colspan="8" style="text-align: center; font-weight:bold;">No faculty records found</td>';
+            tbody.appendChild(emptyRow);
+            return;
+        }
+        
+        facultyData.forEach(faculty => {
+            const newRow = document.createElement('tr');
+            const statusColor = faculty.registration_status === 'Registered' ? 'green' : 'red';
+            
+            newRow.innerHTML = `
+                <td>${faculty.faculty_number}</td>
+                <td>
+                    ${faculty.picture ? 
+                        `<img src="${faculty.picture}" alt="Profile" class="profile-picture">` : 
+                        `<div class="no-picture"><i class="fa-solid fa-user"></i></div>`
+                    }
+                </td>
+                <td><span class="pin-code-display">${faculty.pincode || 'Not Set'}</span></td>
+                <td>${faculty.name}</td>
+                <td>${faculty.department}</td>
+                <td>${faculty.program}</td>
+                <td><span style="color: ${statusColor}; font-weight: bold;">${faculty.registration_status}</span></td>
+                <td>
+                    <i class="fa-solid fa-edit edit-btn" data-id="${faculty.id}" style="color: #8869BB; margin-right: 10px; cursor: pointer;"></i>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        });
+        
+        applyFilters();
+        
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const facultyId = this.getAttribute('data-id');
+                editFaculty(facultyId);
+            });
+        });
+    }
+
+    function editFaculty(facultyId) {
+        const formData = new FormData();
+        formData.append('action', 'get_single_faculty');
+        formData.append('faculty_id', facultyId);
+        
+        fetch('PHP/admin-faculty_perinfo.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const faculty = data.data;
+                document.querySelector("#faculty-number").value = faculty.faculty_number;
+                document.querySelector("#faculty-name").value = faculty.name;
+                document.querySelector("#faculty-registration").textContent = faculty.registration_status;
+                document.querySelector("#pin-display").textContent = faculty.pincode || '------';
+                document.querySelector("#faculty-pin-code").value = faculty.pincode || '';
+                
+                const preview = document.getElementById('picture-preview');
+                const placeholder = document.getElementById('picture-placeholder');
+                const removeBtn = document.getElementById('remove-picture-btn');
+                
+                if (faculty.picture) {
+                    preview.src = faculty.picture;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    removeBtn.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                    placeholder.style.display = 'flex';
+                    removeBtn.style.display = 'none';
+                }
+                
+                document.getElementById('faculty-picture').value = '';
+                
+                const facultyDepartment = document.querySelector("#faculty-department");
+                facultyDepartment.innerHTML = '';
+                Object.keys(departmentsData).forEach(dept => {
+                    const option = document.createElement("option");
+                    option.value = dept;
+                    option.textContent = dept;
+                    option.selected = dept === faculty.department;
+                    facultyDepartment.appendChild(option);
+                });
+                
+                const facultyProgram = document.querySelector("#faculty-program");
+                facultyProgram.innerHTML = '';
+                if (departmentsData[faculty.department]) {
+                    departmentsData[faculty.department].programs.forEach(prog => {
+                        const option = document.createElement("option");
+                        option.value = prog;
+                        option.textContent = prog;
+                        option.selected = prog === faculty.program;
+                        facultyProgram.appendChild(option);
+                    });
+                }
+                
+                formTitle.textContent = "Edit Faculty Information";
+                addUserModal.style.display = "flex";
+                
+                document.querySelector(".save-btn").dataset.facultyId = facultyId;
+            } else {
+                showAlert('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while fetching faculty data', 'error');
+        });
+    }
+
+    closeModalBtn.addEventListener("click", function() {
+        addUserModal.style.display = "none";
+        facultyForm.reset();
+        resetPictureUpload();
+    });
+
+    cancelBtn.addEventListener("click", function() {
+        addUserModal.style.display = "none";
+        facultyForm.reset();
+        resetPictureUpload();
+    });
+    
+    function showAlert(message, type) {
+        alert(message);
+    }
+    
+    const facultyDepartment = document.querySelector("#faculty-department");
+    if (facultyDepartment) {
+        facultyDepartment.addEventListener("change", function() {
+            const selectedDept = facultyDepartment.value;
+            const programs = departmentsData[selectedDept]?.programs || [];
+            const facultyProgram = document.querySelector("#faculty-program");
+            facultyProgram.innerHTML = '<option value="" disabled selected>Select Program</option>';
+            programs.forEach(program => {
+                const option = document.createElement("option");
+                option.value = program;
+                option.textContent = program;
+                facultyProgram.appendChild(option);
+            });
+        });
+    }
+});
+</script>
+</body>
+</html>

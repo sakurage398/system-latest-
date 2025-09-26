@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="CSS/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    const logHistoryBtn = document.getElementById('logHistoryBtn');
+    const logHistoryModal = document.getElementById('logHistoryModal');
+    const closeLogHistory = document.getElementById('closeLogHistory');
+    
+    logHistoryBtn.addEventListener('click', function() {
+        fetchLogHistory();
+        logHistoryModal.style.display = 'flex';
+    });
+    
+    closeLogHistory.addEventListener('click', function() {
+        logHistoryModal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', function(event) {
+        if (event.target === logHistoryModal) {
+            logHistoryModal.style.display = 'none';
+        }
+    });
+    
+    function fetchLogHistory() {
+        fetch('PHP/fetch_log_history.php')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('logHistoryTableBody');
+                tableBody.innerHTML = '';
+                
+                if (data.status === 'success') {
+                    data.logs.forEach(log => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${log.name}</td>
+                            <td>${log.role}</td>
+                            <td>${log.date}</td>
+                            <td>${log.login_time || 'N/A'}</td>
+                            <td>${log.logout_time || 'N/A'}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="5">${data.message}</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching log history:', error);
+                const tableBody = document.getElementById('logHistoryTableBody');
+                tableBody.innerHTML = `<tr><td colspan="5">Error loading log history</td></tr>`;
+            });
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const logoutBtn = document.querySelector(".logout-btn");
+    const modal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+
+    logoutBtn.addEventListener("click", function () {
+        modal.style.display = "flex";
+    });
+
+    yesBtn.addEventListener("click", function () {
+        // First send logout request to record logout time
+        fetch('PHP/logout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                confirm_logout: true 
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Logout failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === "success") {
+                // Redirect to login page after successful logout recording
+                window.location.href = "login.html";
+            } else {
+                console.error('Logout recording failed:', data.message);
+                // Still redirect even if logout recording failed
+                window.location.href = "login.html";
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Still redirect even if there was an error
+            window.location.href = "login.html";
+        });
+    });
+
+    noBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Function to fetch statistics data
+    function fetchStats() {
+        fetch('PHP/fetch-status.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update stat cards with the fetched data
+                    document.querySelector('.stat-card.green .stat-card-content span').textContent = data.data.time_in;
+                    document.querySelector('.stat-card.red .stat-card-content span').textContent = data.data.time_out;
+                    document.querySelector('.stat-card.blue .stat-card-content span').textContent = data.data.students;
+                    document.querySelector('.stat-card.purple .stat-card-content span').textContent = data.data.faculty;
+                    document.querySelector('.stat-card.gray .stat-card-content span').textContent = data.data.staff;
+                    
+                    // Check if it's after 6 PM and show reset notification
+                    const now = new Date();
+                    const hours = now.getHours();
+                    if (hours >= 18) {
+                        showResetNotification();
+                    }
+                } else {
+                    console.error('Error fetching stats:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+            });
+    }
+
+    // Function to show reset notification
+    function showResetNotification() {
+        // Create notification element if it doesn't exist
+        if (!document.querySelector('.reset-notification')) {
+            const notification = document.createElement('div');
+            notification.className = 'reset-notification';
+            notification.innerHTML = `
+                <div class="reset-notification-content">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Statistics have been reset for the day</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    }
+
+    // Fetch stats when page loads
+    fetchStats();
+    
+    // Refresh stats every 30 seconds (optional)
+    setInterval(fetchStats, 30000);
+});
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <span class="title">ALAMS</span>
+        </div>
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+        <button class="log-history-btn" id="logHistoryBtn">
+            <i class="fas fa-history"></i> Log History
+        </button>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+        </aside>
+
+        <main class="dashboard">
+            <div class="content-container">
+                <div class="stats-grid">
+                    <div class="stat-card green"><i class="fa-solid fa-arrow-right-to-bracket"></i><div class="stat-card-content"><p>Time-in</p><span>0</span></div></div>
+                    <div class="stat-card red"><i class="fa-solid fa-arrow-right-from-bracket"></i><div class="stat-card-content"><p>Time-out</p><span>0</span></div></div>
+                    <div class="stat-card blue"><i class="fa-solid fa-user"></i><div class="stat-card-content"><p>Students</p><span>0</span></div></div>
+                    <div class="stat-card purple"><i class="fa-solid fa-user-tie"></i><div class="stat-card-content"><p>Faculty</p><span>0</span></div></div>
+                    <div class="stat-card gray"><i class="fa-solid fa-users" style="color: #ffffff;"></i> <div class="stat-card-content"><p>Staff</p><span>0</span></div> </div>         
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            <p>Do you want to log out?</p>
+            <div class="modal-buttons">
+                <button class="yes-btn">Yes</button>
+                <button class="no-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-history-modal" id="logHistoryModal">
+        <div class="log-history-content">
+            <span class="close-log-history" id="closeLogHistory">&times;</span>
+            <h2 class="log-history-title">System Access Logs</h2>
+            <table class="log-history-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Date</th>
+                        <th>Login Time</th>
+                        <th>Logout Time</th>
+                    </tr>
+                </thead>
+                <tbody id="logHistoryTableBody">
+                    <!-- Log history data will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

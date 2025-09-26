@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Infos</title>
+    <link rel="stylesheet" href="CSS/admin-staff_perinfo.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <div class="title">ALAMS </div>
+        </div>
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+        </div>
+
+        <div class="dashboard">
+            <div class="tabs-container">
+                <a href="admin-student_perinfo.html" class="tab">Student</a>
+                <a href="admin-faculty_perinfo.html" class="tab">Faculty</a>
+                <a href="admin-staff_perinfo.html" class="tab">Staff</a>
+            </div>
+            <h1>Staff Information</h1>
+
+            <div class="content-container">
+                <div class="search-container">
+                    <input type="text" class="search-box" placeholder="Search staff...">
+                    <button class="add-user-btn"><i class="fa-solid fa-plus"></i>Add Staff</button>
+                </div>
+
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Staff Number</th>
+                            <th>Picture</th>
+                            <th>
+                                Pincode
+                            </th>
+                            <th>Name</th>
+                            <th>
+                                Department
+                                <select id="department-filter" class="filter-select">
+                                    <option value="">All Departments</option>
+                                </select>
+                            </th>
+                            <th>
+                                Role
+                                <select id="role-filter" class="filter-select">
+                                    <option value="">All Roles</option>
+                                </select>
+                            </th>
+                            <th>
+                                Registration
+                                <select id="registration-filter" class="filter-select">
+                                    <option value="">All</option>
+                                    <option value="Registered">Registered</option>
+                                    <option value="Unregistered">Unregistered</option>
+                                </select>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Staff data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            Are you sure you want to logout?
+            <div class="modal-buttons">
+                <button class="yes-btn">Yes</button>
+                <button class="no-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="add-user-modal">
+    <div class="add-user-form">
+        <div class="form-header">
+            <div class="form-title"> <i class="fa-solid fa-plus"></i>Add Staff Information</div>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form id="add-staff-form">
+            <div class="form-group">
+                <label for="staff-number">Staff Number:</label>
+                <input type="number" id="staff-number" required>
+            </div>
+            <div class="form-group">
+                <label for="staff-name">Name:</label>
+                <input type="text" id="staff-name" placeholder="Full Name" required>
+            </div>
+            <div class="form-group">
+                <label for="staff-department">Department:</label>
+                <select id="staff-department" required>
+                    <option value="" disabled selected>Select Department</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="staff-role">Role:</label>
+                <select id="staff-role" required>
+                    <option value="" disabled selected>Select Role</option>
+                </select>
+            </div>
+            <div class="picture-upload-section">
+                <label>Picture:</label>
+                <div class="picture-preview" id="picture-preview">
+                    <i class="fa-solid fa-user picture-placeholder" id="picture-placeholder"></i>
+                </div>
+                <div class="picture-buttons">
+                    <button type="button" class="choose-picture-btn" onclick="document.getElementById('staff-picture').click()">
+                        Choose Picture
+                    </button>
+                    <button type="button" class="remove-picture-btn" id="remove-picture-btn">
+                        Remove Picture
+                    </button>
+                </div>
+                <input type="file" id="staff-picture" accept="image/*">
+            </div>
+            
+            <div class="pin-code-section">
+                <label>Pin Code:</label>
+                <input type="text" class="pin-code-input" id="staff-pincode" placeholder="" readonly>
+                <button type="button" class="generate-pin-btn" id="generate-pin-btn">
+                    <i class="fa-solid fa-refresh"></i>
+                    Generate New PIN
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label for="staff-registration" style="text-align: left; display: block;">Registration Status:</label>
+                <div class="role-display" id="staff-registration">Unregistered</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="cancel-btn">Cancel</button>
+                <button type="button" class="save-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Admin menu dropdown functionality
+    const adminMenu = document.querySelector(".admin-menu");
+    const dropdown = document.querySelector(".dropdown");
+
+    adminMenu.addEventListener("click", function (event) {
+        event.stopPropagation();
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function () {
+        dropdown.style.display = "none";
+    });
+    
+    // Logout modal functionality
+    const logoutBtn = document.querySelector(".logout-btn");
+    const logoutModal = document.querySelector(".modal");
+    const yesBtn = document.querySelector(".yes-btn");
+    const noBtn = document.querySelector(".no-btn");
+
+    logoutBtn.addEventListener("click", function () {
+        logoutModal.style.display = "flex";
+    });
+
+    yesBtn.addEventListener("click", function () {
+        window.location.href = "login.html";
+    });
+
+    noBtn.addEventListener("click", function () {
+        logoutModal.style.display = "none";
+    });
+    
+    // Department and role data
+    const departmentsData = {
+        "Library": { roles: ["Librarian", "Assistant Librarian"] },
+        "Registrar": { roles: ["Registrar", "Assistant Registrar"] },
+        "IT Department": { roles: ["IT Manager", "Support Staff"] },
+        "Finance": { roles: ["Accountant", "Finance Assistant"] },
+        "Human Resources": { roles: ["HR Manager", "HR Assistant"] }
+    };
+    
+    // Filter elements
+    const departmentFilter = document.getElementById('department-filter');
+    const roleFilter = document.getElementById('role-filter');
+    const registrationFilter = document.getElementById('registration-filter');
+    
+    // Initialize filter dropdowns
+    function initializeFilters() {
+        departmentFilter.innerHTML = '<option value="">All Departments</option>';
+        Object.keys(departmentsData).forEach(dept => {
+            const option = document.createElement("option");
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+
+        departmentFilter.addEventListener('change', function() {
+            const selectedDept = this.value;
+            updateRoleFilter(selectedDept);
+            applyFilters();
+        });
+
+        roleFilter.addEventListener('change', applyFilters);
+        registrationFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Update role filter based on selected department
+    function updateRoleFilter(department) {
+        roleFilter.innerHTML = '<option value="">All Roles</option>';
+        
+        if (department && departmentsData[department]) {
+            const roles = departmentsData[department].roles;
+            roles.forEach(role => {
+                const option = document.createElement("option");
+                option.value = role;
+                option.textContent = role;
+                roleFilter.appendChild(option);
+            });
+        } else {
+            Object.values(departmentsData).forEach(dept => {
+                dept.roles.forEach(role => {
+                    if (!Array.from(roleFilter.options).some(option => option.value === role)) {
+                        const option = document.createElement("option");
+                        option.value = role;
+                        option.textContent = role;
+                        roleFilter.appendChild(option);
+                    }
+                });
+            });
+        }
+    }
+    
+    initializeFilters();
+    
+    // Load staff data with optional filters
+    function loadStaffData() {
+        const searchValue = document.querySelector(".search-box").value.trim();
+        const deptValue = departmentFilter.value;
+        const roleValue = roleFilter.value;
+        const registrationValue = registrationFilter.value;
+        
+        let url = 'PHP/admin-staff_perinfo.php';
+        let params = [];
+        
+        if (searchValue) params.push(`search=${encodeURIComponent(searchValue)}`);
+        if (deptValue) params.push(`department=${encodeURIComponent(deptValue)}`);
+        if (roleValue) params.push(`role=${encodeURIComponent(roleValue)}`);
+        if (registrationValue) params.push(`registration_status=${encodeURIComponent(registrationValue)}`);
+        
+        if (params.length > 0) url += '?' + params.join('&');
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayStaffData(data.data);
+                } else {
+                    console.error('Error loading staff data:', data.message);
+                    alert('Error loading staff data: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const mockData = [];
+                displayStaffData(mockData);
+            });
+    }
+
+    // Generate pincode for staff
+    function generatePincode(staffId) {
+        const pincode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        fetch('PHP/admin-staff_perinfo.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: staffId, pincode: pincode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Pincode generated successfully');
+                loadStaffData();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error connecting to the server. Please try again later.');
+        });
+    }
+    
+    // Display staff data in table
+    function displayStaffData(staffData) {
+        const tbody = document.querySelector(".user-table tbody");
+        tbody.innerHTML = '';
+        
+        if (staffData.length === 0) {
+            const emptyRow = document.createElement("tr");
+            emptyRow.innerHTML = `<td colspan="8" style="text-align: center; font-weight: bold;">No staff records found</td>`;
+            tbody.appendChild(emptyRow);
+            return;
+        }
+        
+        staffData.forEach(staff => {
+            const newRow = document.createElement("tr");
+            newRow.dataset.id = staff.id;
+            newRow.innerHTML = `
+                <td>${staff.staff_number}</td>
+                <td><img src="${staff.picture || 'img/default-profile.png'}" class="profile-pic" alt="Profile Picture"></td>
+                <td>${staff.pincode || 'Not set'}</td>
+                <td>${staff.name}</td>
+                <td>${staff.department}</td>
+                <td>${staff.role}</td>
+                <td>
+                    <span class="${staff.registration_status === 'Registered' ? 'text-success' : 'text-danger'}" style="font-weight: bold; color: ${staff.registration_status === 'Registered' ? 'green' : 'red'}">
+                        ${staff.registration_status}
+                    </span>
+                </td>
+                <td>
+                    <i class="fa-solid fa-edit" style="color: #8869BB; margin-right: 10px; cursor: pointer;"></i>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        });
+        
+        setupActionButtons();
+    }
+    
+    function applyFilters() {
+        loadStaffData();
+    }
+
+    // Add staff button functionality
+    const addStaffBtn = document.querySelector(".add-user-btn");
+    const addUserModal = document.querySelector(".add-user-modal");
+    const closeModalBtn = document.querySelector(".close-btn");
+    const cancelBtn = document.querySelector(".cancel-btn");
+    const formTitle = document.querySelector(".form-title");
+    
+    addStaffBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        formTitle.textContent = "Add Staff Information";
+        addUserModal.style.display = "block";
+        
+        const staffDepartment = document.querySelector("#staff-department");
+        staffDepartment.innerHTML = '<option value="" disabled selected>Select Department</option>';
+        Object.keys(departmentsData).forEach(dept => {
+            const option = document.createElement("option");
+            option.value = dept;
+            option.textContent = dept;
+            staffDepartment.appendChild(option);
+        });
+        
+        const newStaffDepartment = staffDepartment.cloneNode(true);
+        staffDepartment.parentNode.replaceChild(newStaffDepartment, staffDepartment);
+        
+        newStaffDepartment.addEventListener("change", function() {
+            const selectedDept = this.value;
+            const roles = departmentsData[selectedDept]?.roles || [];
+            const staffRole = document.querySelector("#staff-role");
+            staffRole.innerHTML = '<option value="" disabled selected>Select Role</option>';
+            roles.forEach(role => {
+                const option = document.createElement("option");
+                option.value = role;
+                option.textContent = role;
+                staffRole.appendChild(option);
+            });
+        });
+        
+        document.querySelector("#staff-number").value = "";
+        document.querySelector("#staff-name").value = "";
+        document.querySelector("#staff-registration").textContent = "Unregistered";
+        document.querySelector("#staff-pincode").value = "";
+        
+        const picturePreview = document.querySelector("#picture-preview");
+        const placeholder = document.querySelector("#picture-placeholder");
+        const removePictureBtn = document.querySelector("#remove-picture-btn");
+        const existingImg = picturePreview.querySelector('img');
+        if (existingImg) existingImg.remove();
+        
+        placeholder.style.display = 'block';
+        removePictureBtn.style.display = 'none';
+        
+        delete saveBtn.dataset.editRow;
+        delete saveBtn.dataset.staffId;
+    });
+
+    // Modal close functionality
+    closeModalBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        addUserModal.style.display = "none";
+    });
+
+    cancelBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        addUserModal.style.display = "none";
+    });
+
+    // Save staff data
+    const saveBtn = document.querySelector(".save-btn");
+    
+    saveBtn.addEventListener("click", function() {
+        const staffNumber = document.querySelector("#staff-number").value.trim();
+        const name = document.querySelector("#staff-name").value.trim();
+        const department = document.querySelector("#staff-department").value;
+        const role = document.querySelector("#staff-role").value;
+        const registration_status = document.querySelector("#staff-registration").textContent.trim();
+        const pincode = document.querySelector("#staff-pincode").value.trim();
+        const pictureInput = document.querySelector("#staff-picture");
+        
+        if (!staffNumber || !name || !department || !role) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+        
+        const staffData = {
+            staff_number: staffNumber,
+            name: name,
+            department: department,
+            role: role,
+            registration_status: registration_status,
+            pincode: pincode
+        };
+        
+        if (pictureInput.files.length > 0) {
+            const file = pictureInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                staffData.picture = e.target.result;
+                saveStaffData(staffData);
+            };
+            
+            reader.readAsDataURL(file);
+        } else {
+            saveStaffData(staffData);
+        }
+    });
+
+    // Save staff data to server
+    function saveStaffData(staffData) {
+        if (saveBtn.dataset.staffId) {
+            staffData.id = saveBtn.dataset.staffId;
+            
+            fetch('PHP/admin-staff_perinfo.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(staffData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Staff updated successfully');
+                    loadStaffData();
+                    addUserModal.style.display = "none";
+                    document.querySelector("#add-staff-form").reset();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error connecting to the server. Please try again later.');
+            });
+        } else {
+            staffData.registration_status = "Unregistered";
+            
+            fetch('PHP/admin-staff_perinfo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(staffData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Staff added successfully');
+                    loadStaffData();
+                    addUserModal.style.display = "none";
+                    document.querySelector("#add-staff-form").reset();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error connecting to the server. Please try again later.');
+            });
+        }
+    }
+    
+    // Setup action buttons (edit only)
+    function setupActionButtons() {
+        const editButtons = document.querySelectorAll('.fa-edit');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const staffId = row.dataset.id;
+                const staffNumber = row.cells[0].textContent;
+                const name = row.cells[3].textContent;
+                const department = row.cells[4].textContent;
+                const role = row.cells[5].textContent;
+                const registration = row.cells[6].textContent.trim();
+                const pincode = row.cells[2].textContent;
+                
+                document.querySelector("#staff-number").value = staffNumber;
+                document.querySelector("#staff-name").value = name;
+                document.querySelector("#staff-registration").textContent = registration;
+                document.querySelector("#staff-pincode").value = pincode === 'Not set' ? '' : pincode;
+                
+                const staffDepartment = document.querySelector("#staff-department");
+                staffDepartment.innerHTML = '<option value="" disabled>Select Department</option>';
+                Object.keys(departmentsData).forEach(dept => {
+                    const option = document.createElement("option");
+                    option.value = dept;
+                    option.textContent = dept;
+                    option.selected = dept === department;
+                    staffDepartment.appendChild(option);
+                });
+                
+                const staffRole = document.querySelector("#staff-role");
+                staffRole.innerHTML = '<option value="" disabled>Select Role</option>';
+                if (departmentsData[department]) {
+                    departmentsData[department].roles.forEach(roleOption => {
+                        const option = document.createElement("option");
+                        option.value = roleOption;
+                        option.textContent = roleOption;
+                        option.selected = roleOption === role;
+                        staffRole.appendChild(option);
+                    });
+                }
+                
+                const imgSrc = row.cells[1].querySelector('img').src;
+                const picturePreview = document.querySelector("#picture-preview");
+                const placeholder = document.querySelector("#picture-placeholder");
+                const removePictureBtn = document.querySelector("#remove-picture-btn");
+                
+                if (imgSrc && !imgSrc.includes('default-profile.png')) {
+                    placeholder.style.display = 'none';
+                    let img = picturePreview.querySelector('img');
+                    if (!img) {
+                        img = document.createElement('img');
+                        picturePreview.appendChild(img);
+                    }
+                    img.src = imgSrc;
+                    removePictureBtn.style.display = 'inline-block';
+                } else {
+                    placeholder.style.display = 'block';
+                    const img = picturePreview.querySelector('img');
+                    if (img) img.remove();
+                    removePictureBtn.style.display = 'none';
+                }
+                
+                document.querySelector(".form-title").textContent = "Edit Staff Information";
+                document.querySelector(".add-user-modal").style.display = "block";
+                
+                document.querySelector(".save-btn").dataset.staffId = staffId;
+            });
+        });
+    }
+
+    // Picture handling functionality
+    document.getElementById('remove-picture-btn').addEventListener('click', function() {
+        const pictureInput = document.getElementById('staff-picture');
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removePictureBtn = document.getElementById('remove-picture-btn');
+        
+        pictureInput.value = '';
+        
+        const img = preview.querySelector('img');
+        if (img) img.remove();
+        
+        placeholder.style.display = 'block';
+        removePictureBtn.style.display = 'none';
+    });    
+
+    document.getElementById('staff-picture').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('picture-preview');
+        const placeholder = document.getElementById('picture-placeholder');
+        const removePictureBtn = document.getElementById('remove-picture-btn');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                placeholder.style.display = 'none';
+                
+                let img = preview.querySelector('img');
+                if (!img) {
+                    img = document.createElement('img');
+                    preview.appendChild(img);
+                }
+                img.src = e.target.result;
+                img.style.display = 'block';
+                
+                removePictureBtn.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            const img = preview.querySelector('img');
+            if (img) img.style.display = 'none';
+            
+            placeholder.style.display = 'block';
+            removePictureBtn.style.display = 'none';
+        }
+    });
+    
+    // Pincode generation
+    document.getElementById('generate-pin-btn').addEventListener('click', function() {
+        const pincode = Math.floor(100000 + Math.random() * 900000).toString();
+        document.getElementById('staff-pincode').value = pincode;
+    });
+    
+    // Search functionality
+    const searchBox = document.querySelector(".search-box");
+    if (searchBox) {
+        const newSearchBox = searchBox.cloneNode(true);
+        searchBox.parentNode.replaceChild(newSearchBox, searchBox);
+        
+        newSearchBox.addEventListener("input", function() {
+            clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(function() {
+                applyFilters();
+            }, 300);
+        });
+        
+        newSearchBox.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                applyFilters();
+            }
+        });
+    }
+    
+    // Initial data load
+    loadStaffData();
+});
+</script>
+</body>
+</html>

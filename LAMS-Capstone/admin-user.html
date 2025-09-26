@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="CSS/admin-user.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jockey+One&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Load only Admin users
+    loadUsers('Admin', '#admin-tab .user-table tbody');
+
+    function loadUsers(role, targetSelector) {
+        $.ajax({
+            url: 'PHP/superadmin-user.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'getUsers',
+                role: role,
+                includePincode: true
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    let tbody = $(targetSelector);
+                    tbody.empty();
+                    
+                    if (response.users.length === 0) {
+                        tbody.append(`<tr><td colspan="6" class="text-center">No users found</td></tr>`);
+                        return;
+                    }
+                    
+                    response.users.forEach(function(user) {
+                        let row = `
+                            <tr data-id="${user.id}">
+                                <td>${user.name}</td>
+                                <td>${user.role}</td>
+                                <td>${user.username}</td>
+                                <td>••••••••</td>
+                                <td>••••••</td>
+                                <td>
+                                    <i class="fa-solid fa-edit edit-user" style="color: #8869BB; margin-right: 10px; cursor: pointer;"></i>
+                                    <i class="fa-solid fa-trash delete-user" style="color: red; cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                    
+                    setupActionButtons();
+                } else {
+                    alert('Error loading users: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Failed to load users. Please try again later.');
+                console.error(xhr.responseText);
+            }
+        });
+    }
+
+    $("#admin-tab .search-box").on("input", function() {
+        let searchTerm = $(this).val();
+        searchUsers('Admin', searchTerm, '#admin-tab .user-table tbody');
+    });
+    
+    function searchUsers(role, searchTerm, targetSelector) {
+        $.ajax({
+            url: 'PHP/superadmin-user.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'getUsers',
+                role: role,
+                search: searchTerm,
+                includePincode: true
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    let tbody = $(targetSelector);
+                    tbody.empty();
+                    
+                    if (response.users.length === 0) {
+                        tbody.append(`<tr><td colspan="6" class="text-center">No matching users found</td></tr>`);
+                        return;
+                    }
+                    
+                    response.users.forEach(function(user) {
+                        let row = `
+                            <tr data-id="${user.id}">
+                                <td>${user.name}</td>
+                                <td>${user.role}</td>
+                                <td>${user.username}</td>
+                                <td>••••••••</td>
+                                <td>••••••</td>
+                                <td>
+                                    <i class="fa-solid fa-edit edit-user" style="color: #8869BB; margin-right: 10px; cursor: pointer;"></i>
+                                    <i class="fa-solid fa-trash delete-user" style="color: red; cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                    
+                    setupActionButtons();
+                }
+            }
+        });
+    }
+
+    $("#admin-tab .add-user-btn").click(function() {
+        $(".form-title").text("Add Admin User");
+        $("#user-role-display").text("Admin");
+        $("#user-name").val("");
+        $("#user-username").val("");
+        $("#user-password").val("");
+        $("#user-pincode").val("");
+        $(".add-user-modal").css("display", "flex");
+        $(".save-btn").removeData("editId");
+    });
+    
+    function setupActionButtons() {
+        $(".edit-user").off("click").on("click", function() {
+            const row = $(this).closest('tr');
+            const userId = row.data('id');
+            
+            $.ajax({
+                url: 'PHP/superadmin-user.php',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'getUser',
+                    id: userId
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const user = response.user;
+                        $("#user-name").val(user.name);
+                        $("#user-role-display").text(user.role);
+                        $("#user-username").val(user.username);
+                        $("#user-password").val("");
+                        $("#user-pincode").val(""); // Don't show actual pincode for security
+                        
+                        $(".form-title").text(`Edit ${user.role} User`);
+                        $(".add-user-modal").css("display", "flex");
+                        $(".save-btn").data("editId", userId);
+                    } else {
+                        alert('Error loading user details: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Failed to load user details. Please try again.');
+                }
+            });
+        });
+        
+        $(".delete-user").off("click").on("click", function() {
+            if (confirm("Are you sure you want to delete this user?")) {
+                const row = $(this).closest('tr');
+                const userId = row.data('id');
+                
+                $.ajax({
+                    url: 'PHP/superadmin-user.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        action: 'delete',
+                        id: userId
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            row.remove();
+                            alert('User deleted successfully!');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to delete user. Please try again.');
+                    }
+                });
+            }
+        });
+    }
+    
+    $(".save-btn").click(function() {
+        const name = $("#user-name").val();
+        const role = $("#user-role-display").text();
+        const username = $("#user-username").val();
+        const password = $("#user-password").val();
+        const pincode = $("#user-pincode").val();
+        
+        if (name && role && username && pincode) {
+            const userId = $(this).data("editId");
+            const isEdit = typeof userId !== 'undefined';
+            
+            if (!isEdit && !password) {
+                alert("Please enter a password!");
+                return;
+            }
+            
+            if (!/^\d{6}$/.test(pincode)) {
+                alert("Pincode must be exactly 6 digits!");
+                return;
+            }
+            
+            const data = {
+                action: isEdit ? 'edit' : 'add',
+                name: name,
+                role: role,
+                username: username,
+                pincode: pincode
+            };
+            
+            if (isEdit) {
+                data.id = userId;
+                if (password) {
+                    data.password = password;
+                }
+            } else {
+                data.password = password;
+            }
+            
+            $.ajax({
+                url: 'PHP/superadmin-user.php',
+                type: 'POST',
+                dataType: 'json',
+                data: data,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $(".add-user-modal").css("display", "none");
+                        alert(isEdit ? 'User updated successfully!' : 'User added successfully!');
+                        loadUsers('Admin', '#admin-tab .user-table tbody');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Failed to save user. Please try again.');
+                }
+            });
+        } else {
+            alert("Please fill in all required fields!");
+        }
+    });
+    
+    // Restrict pincode input to numbers only
+    $("#user-pincode").on("input", function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length > 6) {
+            this.value = this.value.slice(0, 6);
+        }
+    });
+    
+    const adminMenu = $(".admin-menu");
+    const dropdown = $(".dropdown");
+
+    adminMenu.click(function(event) {
+        event.stopPropagation();
+        dropdown.css("display", dropdown.css("display") === "block" ? "none" : "block");
+    });
+
+    $(document).click(function() {
+        dropdown.css("display", "none");
+    });
+    
+    const tabs = $(".tab");
+    const tabContents = $(".tab-content");
+    
+    tabs.click(function() {
+        tabs.removeClass("active");
+        tabContents.removeClass("active");
+        
+        $(this).addClass("active");
+        const tabId = $(this).attr("data-tab");
+        $("#" + tabId).addClass("active");
+    });
+    
+    const logoutBtn = $(".logout-btn");
+    const logoutModal = $(".modal");
+    const yesBtn = $(".yes-btn");
+    const noBtn = $(".no-btn");
+
+    logoutBtn.click(function() {
+        logoutModal.css("display", "flex");
+    });
+
+    yesBtn.click(function() {
+        window.location.href = "login.html";
+    });
+
+    noBtn.click(function() {
+        logoutModal.css("display", "none");
+    });
+    
+    const closeModalBtn = $(".close-btn");
+    const cancelBtn = $(".cancel-btn");
+    
+    closeModalBtn.click(function() {
+        $(".add-user-modal").css("display", "none");
+    });
+    
+    cancelBtn.click(function() {
+        $(".add-user-modal").css("display", "none");
+    });
+});
+</script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <span class="title">ALAMS</span>
+        </div>
+        <div class="admin-menu">
+            <span>ADMIN</span>
+            <i class="fa-solid fa-caret-down"></i>
+            <div class="dropdown">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <a href="admin-dashboard.html" class="menu-item"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a href="admin-register.html" class="menu-item"><i class="fa-solid fa-qrcode" style="color: #ffffff;"></i>Registration</a>
+            <a href="admin-scanner.html" class="menu-item"><i class="fa-solid fa-expand"></i> Scanner</a>
+            <a href="admin-students_attendance.html" class="menu-item"><i class="fa-solid fa-clipboard" style="color: #ffffff;"></i>Attendances</a>
+            <a href="admin-student_perinfo.html" class="menu-item"><i class="fa-solid fa-user"></i>Personal Information</a>
+            <a href="admin-user.html" class="menu-item "><i class="fa-solid fa-user-gear"></i> User Management</a>
+           
+        </aside>
+
+        <div class="dashboard">
+            <h1>User Management</h1>
+            
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab active" data-tab="admin-tab">Admin Users</button>
+                </div>
+                
+                <div id="admin-tab" class="tab-content active">
+                    <div class="search-container">
+                        <input type="text" class="search-box" placeholder="Search admin users...">
+                        <button class="add-user-btn"><i class="fa-solid fa-plus"></i> Add Admin</button>
+                    </div>
+                    
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Pincode</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            <p>Do you want to log out?</p>
+            <div class="modal-buttons">
+                <button class="yes-btn">Yes</button>
+                <button class="no-btn">No</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="add-user-modal">
+        <div class="add-user-form">
+            <div class="form-header">
+                <h2 class="form-title">Add Admin User</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label for="user-name">Name</label>
+                    <input type="text" id="user-name" placeholder="Enter full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-role-display">Role</label>
+                    <div id="user-role-display" class="role-display">Admin</div>
+                </div>
+                <div class="form-group">
+                    <label for="user-username">Username</label>
+                    <input type="text" id="user-username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Password</label>
+                    <input type="password" id="user-password" placeholder="Enter password" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-pincode">Pincode (6 digits)</label>
+                    <input type="text" id="user-pincode" placeholder="Enter 6-digit pincode" maxlength="6" pattern="\d{6}" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn">Cancel</button>
+                    <button type="button" class="save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
